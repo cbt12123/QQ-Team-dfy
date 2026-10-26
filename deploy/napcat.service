@@ -1,0 +1,20 @@
+[Unit]
+Description=NapCatQQ headless (WSL)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/Napcat/opt/QQ
+Environment=HOME=/root
+Environment=LANG=C.UTF-8
+# 把 YOUR_BOT_QQ 替换成机器人 QQ 号，或删掉 -q 改为扫码登录
+ExecStart=/usr/bin/dbus-run-session -- /usr/bin/xvfb-run -a -s "-screen 0 1280x1024x24" /root/Napcat/opt/QQ/qq --no-sandbox -q YOUR_BOT_QQ
+Restart=always
+RestartSec=10
+KillMode=control-group
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target

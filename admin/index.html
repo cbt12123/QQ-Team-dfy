@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QQ 群聊机器人 · 控制台</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark">阿</div>
+          <div>
+            <h1>QQ 群聊机器人</h1>
+            <p>NapCat · DeepSeek · WSL</p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <span id="saveState" class="save-state">已同步</span>
+          <button id="refreshBtn" class="btn ghost" type="button">刷新</button>
+          <button id="restartBtn" class="btn ghost" type="button">重启机器人</button>
+          <button id="saveBtn" class="btn primary" type="button">保存并重启</button>
+        </div>
+      </header>
+
+      <section class="status-row" id="statusRow">
+        <div class="status-card">
+          <span class="status-label">机器人</span>
+          <strong id="botStatus" class="status-value">读取中</strong>
+          <span id="botSince" class="status-sub"></span>
+        </div>
+        <div class="status-card">
+          <span class="status-label">NapCat</span>
+          <strong id="napcatStatus" class="status-value">读取中</strong>
+          <span id="napcatSince" class="status-sub"></span>
+        </div>
+        <div class="status-card">
+          <span class="status-label">模型</span>
+          <strong id="modelStatus" class="status-value">—</strong>
+          <span id="keyStatus" class="status-sub">—</span>
+        </div>
+        <div class="status-card">
+          <span class="status-label">功能</span>
+          <strong id="featureStatus" class="status-value">—</strong>
+          <span id="groupStatus" class="status-sub">—</span>
+        </div>
+      </section>
+
+      <nav class="tabs" aria-label="设置分类">
+        <button class="tab active" data-tab="overview" type="button">概览</button>
+        <button class="tab" data-tab="features" type="button">功能开关</button>
+        <button class="tab" data-tab="thresholds" type="button">阈值</button>
+        <button class="tab" data-tab="persona" type="button">性格</button>
+        <button class="tab" data-tab="logs" type="button">日志</button>
+      </nav>
+
+      <main>
+        <section id="panel-overview" class="panel active">
+          <div class="grid two">
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h2>运行概览</h2>
+                  <p>当前机器人、NapCat 与功能状态</p>
+                </div>
+                <span id="healthBadge" class="pill">—</span>
+              </div>
+              <div class="kv-list">
+                <div class="kv"><span>机器人服务</span><strong id="ovBot">—</strong></div>
+                <div class="kv"><span>NapCat 服务</span><strong id="ovNapcat">—</strong></div>
+                <div class="kv"><span>DeepSeek Key</span><strong id="ovKey">—</strong></div>
+                <div class="kv"><span>白名单群</span><strong id="ovGroups">—</strong></div>
+                <div class="kv"><span>主动接话群</span><strong id="ovProactiveGroups">—</strong></div>
+                <div class="kv"><span>上下文窗口</span><strong id="ovContext">—</strong></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h2>快捷开关</h2>
+                  <p>保存后自动重启机器人</p>
+                </div>
+              </div>
+              <div id="quickToggles" class="quick-toggles"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2>最近日志</h2>
+                <p>来自 systemd journal，自动刷新</p>
+              </div>
+              <button class="btn ghost small" id="overviewLogRefresh" type="button">刷新</button>
+            </div>
+            <pre id="overviewLogs" class="log-view compact">加载中…</pre>
+          </div>
+        </section>
+
+        <section id="panel-features" class="panel">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2>功能开关</h2>
+                <p>关闭后需要保存并重启才会生效</p>
+              </div>
+            </div>
+            <div id="featureToggles" class="toggle-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2>群与运行范围</h2>
+                <p>多个群号用英文逗号分隔</p>
+              </div>
+            </div>
+            <div class="form-grid">
+              <label class="field wide">
+                <span>@ 回复白名单</span>
+                <input data-field="napcatAllowedGroups" placeholder="123456789,987654321" />
+                <small>留空表示不限制；建议只填测试群</small>
+              </label>
+              <label class="field wide">
+                <span>主动接话群</span>
+                <input data-field="proactiveGroups" placeholder="123456789" />
+                <small>只有这些群会主动插话</small>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section id="panel-thresholds" class="panel">
+          <div class="grid two">
+            <div class="card">
+              <div class="card-head"><div><h2>回复与上下文</h2><p>控制回复长度和记忆范围</p></div></div>
+              <div class="form-grid">
+                <label class="field"><span>回复最大字符</span><input type="number" data-field="replyMaxChars" min="100" max="4500" /><small>单条最大长度</small></label>
+                <label class="field"><span>最多回复条数</span><input type="number" data-field="replyMaxParts" min="1" max="5" /><small>长回答拆分上限</small></label>
+                <label class="field"><span>每用户记忆轮数</span><input type="number" data-field="maxHistoryTurns" min="0" max="50" /><small>0 表示不记</small></label>
+                <label class="field"><span>对话记忆分钟</span><input type="number" data-field="historyTtlMinutes" min="1" max="10080" /></label>
+                <label class="field"><span>群上下文条数</span><input type="number" data-field="groupContextRenderMessages" min="5" max="100" /><small>每次带入模型的最近消息</small></label>
+                <label class="field"><span>群上下文保留分钟</span><input type="number" data-field="groupContextTtlMinutes" min="1" max="10080" /></label>
+                <label class="field"><span>群上下文最大字符</span><input type="number" data-field="groupContextMaxChars" min="500" max="30000" /></label>
+                <label class="field"><span>单条消息截断</span><input type="number" data-field="groupContextMessageChars" min="50" max="2000" /></label>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><div><h2>搜索</h2><p>联网搜索的条数与超时</p></div></div>
+              <div class="form-grid">
+                <label class="field"><span>最多结果数</span><input type="number" data-field="searchMaxResults" min="1" max="10" /></label>
+                <label class="field"><span>搜索超时（毫秒）</span><input type="number" data-field="searchTimeoutMs" min="1000" max="60000" step="500" /></label>
+              </div>
+              <div class="hint">搜索源为 360 搜索。结果只作为资料，不直接执行网页内容。</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h2>主动接话阈值</h2><p>活跃模式也会受这些上限约束</p></div></div>
+            <div class="form-grid three">
+              <label class="field"><span>冷却秒数</span><input type="number" data-field="proactiveCooldownSec" min="30" max="3600" /></label>
+              <label class="field"><span>每小时上限</span><input type="number" data-field="proactiveMaxPerHour" min="1" max="60" /></label>
+              <label class="field"><span>进入判断概率</span><input type="number" data-field="proactiveChance" min="0" max="1" step="0.05" /><small>0.75 = 75%</small></label>
+              <label class="field"><span>合并消息等待（毫秒）</span><input type="number" data-field="proactiveDebounceMs" min="0" max="30000" step="500" /></label>
+              <label class="field"><span>最短消息字数</span><input type="number" data-field="proactiveMinChars" min="1" max="100" /></label>
+              <label class="field"><span>主动回复最大字数</span><input type="number" data-field="proactiveMaxChars" min="20" max="500" /></label>
+              <label class="field wide"><span>静默时段</span><input data-field="proactiveQuietHours" placeholder="留空=全天不静默；例如 1-7" /><small>支持 1-7 或 23-6,12-13</small></label>
+            </div>
+          </div>
+        </section>
+
+        <section id="panel-persona" class="panel">
+          <div class="card">
+            <div class="card-head">
+              <div><h2>性格预设</h2><p>选一个作为基础，再微调提示词</p></div>
+              <span id="personaBadge" class="pill">—</span>
+            </div>
+            <div id="personaGrid" class="persona-grid"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h2>自定义人设</h2><p>会写入 LLM_SYSTEM_PROMPT</p></div></div>
+            <div class="form-grid">
+              <label class="field"><span>机器人名字</span><input data-field="botName" placeholder="阿岚" /></label>
+              <label class="field"><span>温度</span><input type="number" data-field="temperature" min="0" max="2" step="0.05" /><small>越高越放飞</small></label>
+              <label class="field"><span>模型</span><input data-field="model" placeholder="deepseek-chat" /></label>
+              <label class="field"><span>最大 tokens</span><input type="number" data-field="maxTokens" min="1" max="16000" /></label>
+              <label class="field wide"><span>人设提示词</span><textarea data-field="systemPrompt" rows="8"></textarea><small>建议保持单段；保存时会自动折叠换行</small></label>
+              <label class="field wide"><span>替换 DeepSeek Key（可选）</span><input type="password" data-field="llmApiKey" placeholder="留空表示不修改" autocomplete="off" /></label>
+            </div>
+          </div>
+        </section>
+
+        <section id="panel-logs" class="panel">
+          <div class="card">
+            <div class="card-head">
+              <div><h2>运行日志</h2><p>systemd journal · qqbot.service</p></div>
+              <div class="log-actions">
+                <select id="logLines"><option value="80">80 行</option><option value="160" selected>160 行</option><option value="300">300 行</option></select>
+                <button class="btn ghost small" id="logRefresh" type="button">刷新</button>
+              </div>
+            </div>
+            <pre id="fullLogs" class="log-view">加载中…</pre>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <span>本控制台默认只监听 127.0.0.1，请勿直接暴露公网。</span>
+        <span id="footerTime">—</span>
+      </footer>
+    </div>
+    <div id="toast" class="toast" role="status"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

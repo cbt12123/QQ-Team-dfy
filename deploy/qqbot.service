@@ -1,0 +1,19 @@
+[Unit]
+Description=QQ Group Chatbot
+After=network-online.target napcat.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/qqbot
+Environment=HOME=/root
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node src/index.js
+Restart=always
+RestartSec=5
+KillMode=control-group
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

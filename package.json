@@ -1,0 +1,22 @@
+{
+  "name": "qqteam-dfy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "QQ 群 @ 聊天机器人：官方 QQ Bot / NapCat 双接入，支持大模型对话",
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "start:official": "node src/index.js official",
+    "start:napcat": "node src/index.js napcat",
+    "admin": "node admin/server.js",
+    "demo": "node scripts/demo.js",
+    "test": "node --test",
+    "test:watch": "node --test --watch"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
