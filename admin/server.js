@@ -228,6 +228,22 @@ function restartBot() {
   return systemStatus('qqbot');
 }
 
+function maskId(value) {
+  const text = String(value ?? '');
+  return text.length > 6 ? `${text.slice(0, 3)}****${text.slice(-3)}` : '****';
+}
+
+function redactLog(text) {
+  return String(text ?? '')
+    .replace(/groupId="(\d{5,})"/g, (_, id) => `groupId="${maskId(id)}"`)
+    .replace(/userId="(\d{5,})"/g, (_, id) => `userId="${maskId(id)}"`)
+    .replace(/group_id=(\d{5,})/g, (_, id) => `group_id=${maskId(id)}`)
+    .replace(/user_id=(\d{5,})/g, (_, id) => `user_id=${maskId(id)}`)
+    .replace(/userName="([^"]+)"/g, (_, name) => `userName="${String(name).slice(0, 1)}***"`)
+    .replace(/sk-[A-Za-z0-9]{10,}/g, 'sk-***')
+    .replace(/QQBot\s+[A-Za-z0-9._-]+/g, 'QQBot ***');
+}
+
 function json(res, statusCode, payload) {
   const body = JSON.stringify(payload);
   res.writeHead(statusCode, {
@@ -331,7 +347,7 @@ const server = createServer(async (req, res) => {
           ['-u', 'qqbot', '-n', String(lines), '--no-pager', '--output=short-iso'],
           { encoding: 'utf8', timeout: 8000 },
         );
-        return json(res, 200, { ok: true, lines: output });
+        return json(res, 200, { ok: true, lines: redactLog(output) });
       } catch (error) {
         return json(res, 500, { ok: false, error: `读取日志失败：${error.message}` });
       }

@@ -117,13 +117,19 @@
             <div class="form-grid">
               <label class="field wide">
                 <span>@ 回复白名单</span>
-                <input data-field="napcatAllowedGroups" placeholder="123456789,987654321" />
-                <small>留空表示不限制；建议只填测试群</small>
+                <div class="secret-input">
+                  <input type="password" data-field="napcatAllowedGroups" placeholder="123456789,987654321" autocomplete="off" />
+                  <button type="button" class="reveal" data-reveal="napcatAllowedGroups">显示</button>
+                </div>
+                <small>留空表示不限制；建议只填测试群。默认隐藏，点击“显示”查看。</small>
               </label>
               <label class="field wide">
                 <span>主动接话群</span>
-                <input data-field="proactiveGroups" placeholder="123456789" />
-                <small>只有这些群会主动插话</small>
+                <div class="secret-input">
+                  <input type="password" data-field="proactiveGroups" placeholder="123456789" autocomplete="off" />
+                  <button type="button" class="reveal" data-reveal="proactiveGroups">显示</button>
+                </div>
+                <small>只有这些群会主动插话。默认隐藏。</small>
               </label>
             </div>
           </div>

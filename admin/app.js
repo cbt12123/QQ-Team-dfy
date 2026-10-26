@@ -157,6 +157,30 @@ function collectForm() {
   return config;
 }
 
+function maskGroupList(value) {
+  const items = String(value ?? '')
+    .split(/[,，\s]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+  if (!items.length) return '未设置';
+  return items
+    .map((item) => (item.length > 6 ? `${item.slice(0, 3)}****${item.slice(-3)}` : '****'))
+    .join(', ');
+}
+
+function setupReveals() {
+  for (const button of $$('.reveal')) {
+    button.addEventListener('click', () => {
+      const field = button.dataset.reveal;
+      const input = $(`[data-field="${field}"]`);
+      if (!input) return;
+      const visible = input.type === 'text';
+      input.type = visible ? 'password' : 'text';
+      button.textContent = visible ? '显示' : '隐藏';
+    });
+  }
+}
+
 function renderStatus(payload) {
   const { bot, napcat, config } = payload;
   const botOk = bot?.active;
@@ -188,8 +212,10 @@ function renderStatus(payload) {
   $('#ovBot').textContent = botOk ? `运行中${bot.pid ? ` · PID ${bot.pid}` : ''}` : '未运行';
   $('#ovNapcat').textContent = napcatOk ? '已连接' : '未运行';
   $('#ovKey').textContent = config.hasApiKey ? '已配置' : '未配置';
-  $('#ovGroups').textContent = groups || '未限制';
-  $('#ovProactiveGroups').textContent = config.proactiveGroups || '未开启群';
+  $('#ovGroups').textContent = groups ? maskGroupList(groups) : '未限制';
+  $('#ovProactiveGroups').textContent = config.proactiveGroups
+    ? maskGroupList(config.proactiveGroups)
+    : '未开启群';
   $('#ovContext').textContent = `${config.groupContextRenderMessages ?? '—'} 条 / ${config.groupContextMaxChars ?? '—'} 字符`;
 }
 
@@ -314,6 +340,7 @@ function setupInputs() {
 async function boot() {
   setupTabs();
   setupInputs();
+  setupReveals();
   $('#refreshBtn').addEventListener('click', () => {
     refreshStatus();
     refreshLogs(Number($('#logLines').value));
