@@ -204,6 +204,12 @@ test('ChatEngine injects family relationship and weather data', async () => {
             job: '后端程序员',
             note: '爸爸的发小',
           },
+          '10005': {
+            name: '妈妈',
+            city: '海口',
+            job: '应用数学博士',
+            note: '特别牛的学霸',
+          },
         },
       },
     }),
@@ -235,6 +241,7 @@ test('ChatEngine injects family relationship and weather data', async () => {
   await engine.reply({ ...base, userId: '10002' });
   await engine.reply({ ...base, userId: '10003', messageId: 'm-family-2' });
   await engine.reply({ ...base, userId: '10004', messageId: 'm-family-uncle' });
+  await engine.reply({ ...base, userId: '10005', messageId: 'm-family-mom' });
   await engine.reply({
     ...base,
     userId: '10002',
@@ -251,7 +258,11 @@ test('ChatEngine injects family relationship and weather data', async () => {
   assert.match(calls[2].relationship, /上海/);
   assert.match(calls[2].relationship, /后端程序员/);
   assert.match(calls[2].relationship, /爸爸的发小/);
-  assert.equal(calls[3].voice, true);
+  assert.match(calls[3].relationship, /妈妈/);
+  assert.match(calls[3].relationship, /海口/);
+  assert.match(calls[3].relationship, /应用数学博士/);
+  assert.match(calls[3].relationship, /特别牛的学霸/);
+  assert.equal(calls[4].voice, true);
 });
 
 test('ChatEngine returns an image URL for drawing requests', async () => {

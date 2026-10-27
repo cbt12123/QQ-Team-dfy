@@ -147,16 +147,17 @@ export class ChatEngine {
     const relation = family.relations?.[String(userId)];
     if (relation) {
       const name = typeof relation === 'string' ? relation : relation.name;
+      const pronoun = /妈|姨|姐|妹|女|娘|婶|姑|奶/.test(name) ? '她' : '他';
       const details = [];
       if (typeof relation === 'object') {
-        if (relation.city) details.push(`他在${relation.city}`);
-        if (relation.job) details.push(`职业是${relation.job}`);
+        if (relation.city) details.push(`${pronoun}在${relation.city}`);
+        if (relation.job) details.push(`${pronoun}的职业是${relation.job}`);
       }
       if (typeof relation === 'object' && relation.note) {
-        details.push(`和爸爸的关系是：${relation.note}`);
+        details.push(`备注：${relation.note}`);
       }
       return [
-        `当前和你说话的是你的${name}。称呼他“${name}”。`,
+        `当前和你说话的是你的${name}。称呼${pronoun}“${name}”。`,
         ...(details.length ? [`${details.join('，')}。这是你记得的亲友设定。`] : []),
         '按长辈或亲友的语气自然相处，不要叫爸爸，也不要编造其他关系。',
       ].join('\n');
