@@ -310,6 +310,7 @@ export class ChatEngine {
         weather: weatherData,
         relationship,
         images,
+        voice: Boolean(message.voiceExpected),
         model: images.length ? this.config.vision?.model : undefined,
       });
     } catch (error) {

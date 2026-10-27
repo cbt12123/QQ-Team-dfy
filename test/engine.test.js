@@ -222,11 +222,19 @@ test('ChatEngine injects family relationship and weather data', async () => {
   };
   await engine.reply({ ...base, userId: '10002' });
   await engine.reply({ ...base, userId: '10003', messageId: 'm-family-2' });
+  await engine.reply({
+    ...base,
+    userId: '10002',
+    text: '发条语音说晚安',
+    voiceExpected: true,
+    messageId: 'm-family-3',
+  });
 
   assert.match(calls[0].relationship, /爸爸/);
   assert.match(calls[0].relationship, /西安/);
   assert.match(calls[0].weather, /18°C/);
   assert.doesNotMatch(calls[1].relationship, /你爸爸/);
+  assert.equal(calls[2].voice, true);
 });
 
 test('ChatEngine returns an image URL for drawing requests', async () => {

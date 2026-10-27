@@ -101,6 +101,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
       text: message.text,
       voice,
     });
+    message.voiceExpected = useVoice;
 
     if (singing.shouldSing(message.text) && typeof message.replyVoice === 'function') {
       const song = await singing.sing(message.text);
