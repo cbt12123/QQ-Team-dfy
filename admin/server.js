@@ -41,6 +41,7 @@ const FIELD_MAP = {
   searchTimeoutMs: 'SEARCH_TIMEOUT_MS',
   proactiveGroups: 'PROACTIVE_GROUPS',
   napcatAllowedGroups: 'NAPCAT_ALLOWED_GROUPS',
+  privateAllowedUsers: 'NAPCAT_PRIVATE_ALLOWED_USERS',
   proactiveCooldownSec: 'PROACTIVE_COOLDOWN_SEC',
   proactiveMaxPerHour: 'PROACTIVE_MAX_PER_HOUR',
   proactiveChance: 'PROACTIVE_CHANCE',

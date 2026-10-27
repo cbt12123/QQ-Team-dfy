@@ -417,3 +417,112 @@ test('NapCatAdapter uses the most recent forwarded record when replying to a lat
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test('NapCatAdapter replies to an allowlisted private QQ', async () => {
+  const server = new WebSocketServer({ host: '127.0.0.1', port: 0 });
+  await once(server, 'listening');
+  const { port } = server.address();
+
+  let receivedMessage;
+  const actions = [];
+
+  server.on('connection', (socket) => {
+    socket.on('message', (raw) => {
+      const payload = JSON.parse(String(raw));
+      if (payload.action === 'send_private_msg') {
+        actions.push(payload);
+        socket.send(
+          JSON.stringify({
+            status: 'ok',
+            retcode: 0,
+            data: { message_id: 5 },
+            echo: payload.echo,
+          }),
+        );
+      }
+    });
+
+    socket.send(
+      JSON.stringify({
+        post_type: 'message',
+        message_type: 'private',
+        sub_type: 'friend',
+        self_id: 10001,
+        user_id: 10002,
+        message_id: 9101,
+        time: 1,
+        sender: { nickname: 'test friend' },
+        message: [{ type: 'text', data: { text: 'hello' } }],
+      }),
+    );
+  });
+
+  const adapter = new NapCatAdapter({
+    wsUrl: `ws://127.0.0.1:${port}`,
+    logger: silentLogger,
+    privateAllowedUsers: new Set(['10002']),
+    onMessage: async (message) => {
+      receivedMessage = message;
+      await message.reply('private reply');
+    },
+    reconnectBaseMs: 20,
+    reconnectMaxMs: 50,
+  });
+
+  try {
+    adapter.start();
+    const action = await waitFor(() => actions[0]);
+    assert.equal(receivedMessage.platform, 'napcat-private');
+    assert.equal(receivedMessage.groupId, 'private:10002');
+    assert.equal(receivedMessage.text, 'hello');
+    assert.equal(action.params.user_id, '10002');
+    assert.equal(action.params.message[0].type, 'text');
+    assert.match(action.params.message[0].data.text, /private reply/);
+  } finally {
+    await adapter.stop();
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('NapCatAdapter ignores private messages from users outside the allowlist', async () => {
+  const server = new WebSocketServer({ host: '127.0.0.1', port: 0 });
+  await once(server, 'listening');
+  const { port } = server.address();
+  let receivedMessage = null;
+
+  server.on('connection', (socket) => {
+    socket.send(
+      JSON.stringify({
+        post_type: 'message',
+        message_type: 'private',
+        sub_type: 'friend',
+        self_id: 10001,
+        user_id: 999999,
+        message_id: 9102,
+        time: 1,
+        sender: { nickname: 'stranger' },
+        message: [{ type: 'text', data: { text: 'hello' } }],
+      }),
+    );
+  });
+
+  const adapter = new NapCatAdapter({
+    wsUrl: `ws://127.0.0.1:${port}`,
+    logger: silentLogger,
+    privateAllowedUsers: new Set(['10002']),
+    onMessage: async (message) => {
+      receivedMessage = message;
+    },
+    reconnectBaseMs: 20,
+    reconnectMaxMs: 50,
+  });
+
+  try {
+    adapter.start();
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    assert.equal(receivedMessage, null);
+  } finally {
+    await adapter.stop();
+    await new Promise((resolve) => server.close(resolve));
+  }
+});

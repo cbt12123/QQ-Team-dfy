@@ -32,6 +32,7 @@ export class NapCatAdapter {
     replyMaxParts = 4,
     forwardEnabled = true,
     allowedGroups = new Set(),
+    privateAllowedUsers = new Set(),
     WebSocketImpl = WebSocket,
     reconnectBaseMs = 1000,
     reconnectMaxMs = 30_000,
@@ -52,6 +53,7 @@ export class NapCatAdapter {
     this.replyMaxParts = replyMaxParts;
     this.forwardEnabled = forwardEnabled;
     this.allowedGroups = allowedGroups;
+    this.privateAllowedUsers = privateAllowedUsers;
     this.WebSocketImpl = WebSocketImpl;
     this.reconnectBaseMs = reconnectBaseMs;
     this.reconnectMaxMs = reconnectMaxMs;
@@ -145,12 +147,67 @@ export class NapCatAdapter {
       return;
     }
 
-    if (payload?.post_type !== 'message' || payload?.message_type !== 'group') {
+    if (payload?.post_type !== 'message') return;
+
+    if (payload.message_type === 'private') {
+      void this.#handlePrivateMessage(payload).catch((error) => {
+        this.logger?.error('处理 NapCat 私聊消息失败', { error });
+      });
       return;
     }
 
+    if (payload.message_type !== 'group') return;
+
     void this.#handleGroupMessage(payload).catch((error) => {
       this.logger?.error('处理 NapCat 群消息失败', { error });
+    });
+  }
+
+  async #handlePrivateMessage(event) {
+    const selfId = event.self_id;
+    if (!selfId || String(event.user_id) === String(selfId)) return;
+
+    const userId = String(event.user_id ?? '');
+    if (!userId || !this.privateAllowedUsers.has(userId)) {
+      this.logger?.debug('私聊用户不在白名单，已忽略', { userId: userId ? '***' : '' });
+      return;
+    }
+
+    const messageId = String(event.message_id ?? '');
+    const dedupeKey = `private:${userId}:${messageId || `${event.time}:${event.user_id}`}`;
+    if (this.#seen.has(dedupeKey)) return;
+    this.#seen.add(dedupeKey);
+    if (this.#seen.size > 1000) {
+      this.#seen.delete(this.#seen.values().next().value);
+    }
+
+    const info = analyzeOneBotMessage(event, selfId);
+    let text = info.text;
+    if (this.forwardEnabled && text.includes('[聊天记录]')) {
+      text = await this.#expandForwards(event, text);
+    }
+
+    const userName = String(event.sender?.card || event.sender?.nickname || '');
+    const message = {
+      platform: 'napcat-private',
+      groupId: `private:${userId}`,
+      userId,
+      userName,
+      text,
+      messageId,
+      raw: event,
+      reply: async (answer) => {
+        await this.sendPrivateText(userId, answer);
+      },
+    };
+
+    this.logger?.info('收到 QQ 私聊消息', {
+      userId: '***',
+      chars: Array.from(text).length,
+    });
+
+    Promise.resolve(this.onMessage(message)).catch((error) => {
+      this.logger?.error('处理 QQ 私聊消息失败', { userId: '***', error });
     });
   }
 
@@ -268,6 +325,26 @@ export class NapCatAdapter {
         await this.#callApi('send_group_msg', {
           group_id: groupId,
           message: segments,
+        });
+      }
+      if (index < chunks.length - 1) await sleep(250);
+    }
+  }
+
+  async sendPrivateText(userId, answer) {
+    const chunks = splitText(answer, this.replyMaxChars, this.replyMaxParts);
+    for (let index = 0; index < chunks.length; index += 1) {
+      const chunk = chunks[index];
+      if (this.dryRun) {
+        this.logger?.info('[dry-run] NapCat 私聊回复', {
+          userId: '***',
+          seq: index + 1,
+          content: chunk,
+        });
+      } else {
+        await this.#callApi('send_private_msg', {
+          user_id: userId,
+          message: [{ type: 'text', data: { text: chunk } }],
         });
       }
       if (index < chunks.length - 1) await sleep(250);

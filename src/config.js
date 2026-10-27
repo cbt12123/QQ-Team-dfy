@@ -172,6 +172,7 @@ export function loadConfig({ argv = [], env = process.env } = {}) {
     ),
     accessToken: text(env, 'NAPCAT_ACCESS_TOKEN'),
     allowedGroups: parseIdSet(text(env, 'NAPCAT_ALLOWED_GROUPS')),
+    privateAllowedUsers: parseIdSet(text(env, 'NAPCAT_PRIVATE_ALLOWED_USERS')),
   };
 
   const llm = {

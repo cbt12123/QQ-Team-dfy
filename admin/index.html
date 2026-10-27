@@ -72,6 +72,7 @@
                 <div class="kv"><span>DeepSeek Key</span><strong id="ovKey">—</strong></div>
                 <div class="kv"><span>白名单群</span><strong id="ovGroups">—</strong></div>
                 <div class="kv"><span>主动接话群</span><strong id="ovProactiveGroups">—</strong></div>
+                <div class="kv"><span>私聊白名单</span><strong id="ovPrivate">—</strong></div>
                 <div class="kv"><span>上下文窗口</span><strong id="ovContext">—</strong></div>
               </div>
             </div>
@@ -130,6 +131,14 @@
                   <button type="button" class="reveal" data-reveal="proactiveGroups">显示</button>
                 </div>
                 <small>只有这些群会主动插话。默认隐藏。</small>
+              </label>
+              <label class="field wide">
+                <span>私聊白名单 QQ</span>
+                <div class="secret-input">
+                  <input type="password" data-field="privateAllowedUsers" placeholder="123456789" autocomplete="off" />
+                  <button type="button" class="reveal" data-reveal="privateAllowedUsers">显示</button>
+                </div>
+                <small>只有这些 QQ 可以私聊机器人；留空表示禁止私聊。默认隐藏。</small>
               </label>
             </div>
           </div>

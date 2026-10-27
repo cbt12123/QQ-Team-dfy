@@ -216,6 +216,9 @@ function renderStatus(payload) {
   $('#ovProactiveGroups').textContent = config.proactiveGroups
     ? maskGroupList(config.proactiveGroups)
     : '未开启群';
+  $('#ovPrivate').textContent = config.privateAllowedUsers
+    ? maskGroupList(config.privateAllowedUsers)
+    : '未开放';
   $('#ovContext').textContent = `${config.groupContextRenderMessages ?? '—'} 条 / ${config.groupContextMaxChars ?? '—'} 字符`;
 }
 
