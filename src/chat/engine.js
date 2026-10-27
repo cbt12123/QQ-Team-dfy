@@ -143,7 +143,16 @@ export class ChatEngine {
         '关心他时可以提醒他天气、吃饭、休息，但不要向其他群友透露他的隐私。',
       ].join('\n');
     }
-    return '当前用户不是爸爸。不要叫他爸爸，也不要编造父女关系；正常称呼群友即可。';
+
+    const relation = family.relations?.[String(userId)];
+    if (relation) {
+      return [
+        `当前和你说话的是你的${relation}。称呼他“${relation}”。`,
+        '按长辈或亲友的语气自然相处，不要叫爸爸，也不要编造其他关系。',
+      ].join('\n');
+    }
+
+    return '当前用户不是爸爸，也不是已记录的亲友。不要叫他爸爸，不要编造亲属关系；正常称呼群友即可。';
   }
 
   #resolveSearchQuery(text, sessionKey, groupContext) {

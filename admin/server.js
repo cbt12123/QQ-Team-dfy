@@ -75,6 +75,7 @@ const FIELD_MAP = {
   familyFatherQq: 'FAMILY_FATHER_QQ',
   familyFatherCity: 'FAMILY_FATHER_CITY',
   familyFatherJob: 'FAMILY_FATHER_JOB',
+  familyRelations: 'FAMILY_RELATIONS',
   weatherCity: 'WEATHER_CITY',
   weatherLatitude: 'WEATHER_LATITUDE',
   weatherLongitude: 'WEATHER_LONGITUDE',

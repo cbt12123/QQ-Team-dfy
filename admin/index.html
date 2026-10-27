@@ -181,6 +181,14 @@
               </label>
               <label class="field"><span>爸爸所在城市</span><input data-field="familyFatherCity" placeholder="西安" /></label>
               <label class="field"><span>爸爸职业</span><input data-field="familyFatherJob" placeholder="程序员" /></label>
+              <label class="field wide">
+                <span>其他亲友关系</span>
+                <div class="secret-input">
+                  <input type="password" data-field="familyRelations" placeholder="2913487935:星河叔叔" autocomplete="off" />
+                  <button type="button" class="reveal" data-reveal="familyRelations">显示</button>
+                </div>
+                <small>格式 QQ:称呼，多个用逗号分隔；默认隐藏。例：2913487935:星河叔叔</small>
+              </label>
               <label class="field"><span>天气城市</span><input data-field="weatherCity" placeholder="西安" /></label>
               <label class="field"><span>天气纬度</span><input type="number" data-field="weatherLatitude" step="0.0001" /></label>
               <label class="field"><span>天气经度</span><input type="number" data-field="weatherLongitude" step="0.0001" /></label>

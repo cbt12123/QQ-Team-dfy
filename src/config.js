@@ -80,6 +80,17 @@ export function parseIdSet(raw) {
   );
 }
 
+export function parseRelations(raw) {
+  const relations = {};
+  for (const item of String(raw ?? '').split(/[,，;\n]+/)) {
+    const match = /^\s*(\d{5,})\s*[:：=]\s*(.+?)\s*$/.exec(item);
+    if (!match) continue;
+    const name = match[2].trim();
+    if (name) relations[match[1]] = name;
+  }
+  return relations;
+}
+
 function assertHttpUrl(value, name) {
   let url;
   try {
@@ -225,6 +236,7 @@ export function loadConfig({ argv = [], env = process.env } = {}) {
       fatherQq: text(env, 'FAMILY_FATHER_QQ'),
       fatherCity: text(env, 'FAMILY_FATHER_CITY', '西安') || '西安',
       fatherJob: text(env, 'FAMILY_FATHER_JOB', '程序员') || '程序员',
+      relations: parseRelations(text(env, 'FAMILY_RELATIONS')),
     },
     weather: {
       enabled: boolean(env, 'WEATHER_ENABLED', true),

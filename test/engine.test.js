@@ -193,7 +193,12 @@ test('ChatEngine injects family relationship and weather data', async () => {
   const calls = [];
   const engine = new ChatEngine(
     config({
-      family: { fatherQq: '10002', fatherCity: '西安', fatherJob: '程序员' },
+      family: {
+        fatherQq: '10002',
+        fatherCity: '西安',
+        fatherJob: '程序员',
+        relations: { '10004': '星河叔叔' },
+      },
     }),
     {
       llm: {
@@ -222,6 +227,7 @@ test('ChatEngine injects family relationship and weather data', async () => {
   };
   await engine.reply({ ...base, userId: '10002' });
   await engine.reply({ ...base, userId: '10003', messageId: 'm-family-2' });
+  await engine.reply({ ...base, userId: '10004', messageId: 'm-family-uncle' });
   await engine.reply({
     ...base,
     userId: '10002',
@@ -234,7 +240,8 @@ test('ChatEngine injects family relationship and weather data', async () => {
   assert.match(calls[0].relationship, /西安/);
   assert.match(calls[0].weather, /18°C/);
   assert.doesNotMatch(calls[1].relationship, /你爸爸/);
-  assert.equal(calls[2].voice, true);
+  assert.match(calls[2].relationship, /星河叔叔/);
+  assert.equal(calls[3].voice, true);
 });
 
 test('ChatEngine returns an image URL for drawing requests', async () => {
