@@ -34,6 +34,11 @@ const FIELD_MAP = {
   imageGenEnabled: 'IMAGE_GEN_ENABLED',
   imageGenWidth: 'IMAGE_GEN_WIDTH',
   imageGenHeight: 'IMAGE_GEN_HEIGHT',
+  breezeEnabled: 'BREEZE_ENABLED',
+  breezeUrl: 'BREEZE_URL',
+  breezeInstruction: 'BREEZE_INSTRUCTION',
+  breezeCfgScale: 'BREEZE_CFG_SCALE',
+  breezeSeed: 'BREEZE_SEED',
   svsEnabled: 'SVS_ENABLED',
   svsUrl: 'SVS_URL',
   svsSteps: 'SVS_STEPS',
@@ -104,6 +109,8 @@ const NUMBER_RULES = {
   imageGenHeight: [256, 2048],
   voiceMaxChars: [10, 1000],
   svsSteps: [4, 80],
+  breezeCfgScale: [1, 8],
+  breezeSeed: [0, 2147483647],
 };
 
 const BOOLEAN_FIELDS = new Set([
@@ -114,6 +121,7 @@ const BOOLEAN_FIELDS = new Set([
   'weatherEnabled',
   'visionEnabled',
   'imageGenEnabled',
+  'breezeEnabled',
   'svsEnabled',
   'voiceEnabled',
   'voiceAlways',

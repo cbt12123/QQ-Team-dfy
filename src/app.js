@@ -12,6 +12,7 @@ import { WeatherService } from './weather/weather.js';
 import { ImageService } from './images/image-service.js';
 import { ImageGenerator } from './images/image-generator.js';
 import { VoiceService } from './voice/voice.js';
+import { BreezeVoiceService } from './voice/breeze.js';
 import { SingingService } from './singing/singing.js';
 import { OfficialApi } from './adapters/official-api.js';
 import { OfficialAdapter } from './adapters/official.js';
@@ -36,6 +37,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
   const vision = new ImageService({ ...config.vision, logger });
   const imageGenerator = new ImageGenerator({ ...config.imageGen, logger });
   const voice = new VoiceService({ ...config.voice, logger });
+  const breeze = new BreezeVoiceService({ ...config.breeze, logger });
   const singing = new SingingService({ ...config.singing, logger });
   const engine = new ChatEngine(config, {
     logger,
@@ -150,9 +152,12 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
       if (typeof message.replyVoice !== 'function') {
         answer.text = `${answer.text}\n（当前接入方式不支持发送语音）`;
       } else {
-        const audio = await voice.synthesize(answer.text, {
-          singing: voice.isSinging(message.text),
-        });
+        let audio = await breeze.synthesize(answer.text);
+        if (!audio) {
+          audio = await voice.synthesize(answer.text, {
+            singing: voice.isSinging(message.text),
+          });
+        }
         if (audio?.filePath) {
           try {
             await message.replyVoice(audio.filePath);
@@ -268,6 +273,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
     vision,
     imageGenerator,
     voice,
+    breeze,
     singing,
     engine,
     adapter,

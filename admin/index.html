@@ -126,6 +126,20 @@
           <div class="card">
             <div class="card-head">
               <div>
+                <h2>Breeze 语音</h2>
+                <p>Breeze TTS 2；只负责正常说话，不唱歌</p>
+              </div>
+            </div>
+            <div class="form-grid">
+              <label class="field wide"><span>Breeze 地址</span><input data-field="breezeUrl" placeholder="http://127.0.0.1:7860" /><small>容器默认 127.0.0.1:7860</small></label>
+              <label class="field wide"><span>音色描述</span><input data-field="breezeInstruction" placeholder="一位可爱、活泼、声音清甜的少女……" /><small>用自然语言描述音色和语气</small></label>
+              <label class="field"><span>CFG Scale</span><input type="number" data-field="breezeCfgScale" min="1" max="8" step="0.5" /></label>
+              <label class="field"><span>Seed</span><input type="number" data-field="breezeSeed" min="0" max="2147483647" /></label>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div>
                 <h2>唱歌 SVS</h2>
                 <p>独立 DiffSinger 容器，声库：绮萱；失败时回退到 edge-tts 念唱</p>
               </div>

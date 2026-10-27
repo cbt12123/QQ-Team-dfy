@@ -12,3 +12,5 @@ data/
 coverage/
 svs/wheels/*.whl
 svs/models/
+breeze/wheels/*.whl
+breeze/models/

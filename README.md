@@ -15,7 +15,7 @@
 - 天气查询：Open-Meteo，无需 Key，默认西安
 - 看图：DeepSeek 视觉模型，读取图片内容/截图文字
 - 生图：Pollinations 免 Key，生成后发到群或私聊
-- 语音：edge-tts 正常说话；唱歌用独立 DiffSinger SVS 容器，发 QQ 语音
+- 语音：Breeze TTS 2 正常说话，失败回退 edge-tts；唱歌暂停
 - DeepSeek / 任意 OpenAI 兼容接口
 - 每个用户独立对话记忆，持久化到磁盘
 - 旁听群聊最近 50 条消息，作为 @ 回复的上下文
@@ -177,9 +177,55 @@ IMAGE_GEN_HEIGHT=1024
 
 注意：看图需要模型服务能访问图片 URL；生图由第三方 Pollinations 提供，网络不稳定时可能失败。
 
-## 语音与唱歌
+## 语音（Breeze TTS 2）
 
-### 正常说话
+正常说话优先使用 [Breeze TTS 2](https://huggingface.co/BreezeBlue/Breeze-TTS-2)，通过独立 GPU 容器提供，失败时自动回退 edge-tts。
+
+模型权重约 **7.6GB**，不提交到 Git。放到：
+
+```text
+/opt/qqbot/models/breeze-tts-2/
+```
+
+下载地址：<https://huggingface.co/BreezeBlue/Breeze-TTS-2>
+
+构建并启动：
+
+```bash
+cd breeze
+docker build -t qqbot-breeze:latest .
+docker run -d --name qqbot-breeze --gpus all --ipc=host \
+  -p 127.0.0.1:7860:7860 \
+  -v /opt/qqbot/models:/models:ro \
+  --restart unless-stopped \
+  qqbot-breeze:latest
+```
+
+`BREEZE_INSTRUCTION` 控制音色，默认是可爱活泼的少女音：
+
+```env
+BREEZE_ENABLED=1
+BREEZE_URL=http://127.0.0.1:7860
+BREEZE_INSTRUCTION=一位可爱、活泼、声音清甜的少女，说话自然亲切，带一点调皮，像在跟爸爸聊天。
+BREEZE_CFG_SCALE=4
+BREEZE_SEED=42
+BREEZE_TIMEOUT_MS=120000
+```
+
+显存：eager 约 7.7GB，16GB 显卡可用；`--fast-all` 约 14.4GB，不建议在 16GB 上和别的模型同时跑。
+
+触发方式：
+
+```text
+@大肥鱼 发条语音说晚安
+@大肥鱼 用语音说一句鼓励我的话
+```
+
+私聊也支持。Breeze 返回 PCM，机器人转成 mp3 后通过 NapCat 的 `record` 段发送，不会发文件卡片。
+
+> 授权：Breeze TTS 2 源码 Apache-2.0，模型权重和自托管输出仅允许研究/非商业使用；商用需联系 BreezeBlue 获取授权。
+
+### edge-tts 后备
 
 语音使用 [edge-tts](https://pypi.org/project/edge-tts/)，不需要 API Key。
 
@@ -210,7 +256,9 @@ VOICE_MAX_CHARS=300
 
 `VOICE_ALWAYS=1` 可以把所有文字回复都转成语音；默认关闭，避免延迟和刷屏。
 
-### 真唱歌：DiffSinger 容器
+### 真唱歌：DiffSinger 容器（当前暂停）
+
+> 当前只做 Breeze 正常说话，SVS 容器已停止，`SVS_ENABLED=0`。以下保留为后续恢复用。
 
 唱歌是独立的 SVS 服务，不占用机器人进程：
 

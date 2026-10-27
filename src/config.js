@@ -244,8 +244,21 @@ export function loadConfig({ argv = [], env = process.env } = {}) {
         max: 48 * 1024 * 1024,
       }),
     },
+    breeze: {
+      enabled: boolean(env, 'BREEZE_ENABLED', true),
+      url: assertHttpUrl(text(env, 'BREEZE_URL', 'http://127.0.0.1:7860'), 'BREEZE_URL'),
+      instruction:
+        text(
+          env,
+          'BREEZE_INSTRUCTION',
+          '一位可爱、活泼、声音清甜的少女，说话自然亲切，带一点调皮，像在跟爸爸聊天。',
+        ) || '一位可爱、活泼、声音清甜的少女，说话自然亲切，带一点调皮，像在跟爸爸聊天。',
+      cfgScale: numberValue(env, 'BREEZE_CFG_SCALE', 4, { min: 1, max: 8 }),
+      seed: integer(env, 'BREEZE_SEED', 42, { min: 0, max: 2_147_483_647 }),
+      timeoutMs: integer(env, 'BREEZE_TIMEOUT_MS', 120_000, { min: 10_000, max: 300_000 }),
+    },
     singing: {
-      enabled: boolean(env, 'SVS_ENABLED', true),
+      enabled: boolean(env, 'SVS_ENABLED', false),
       url: assertHttpUrl(text(env, 'SVS_URL', 'http://127.0.0.1:8765'), 'SVS_URL'),
       timeoutMs: integer(env, 'SVS_TIMEOUT_MS', 30_000, { min: 5_000, max: 180_000 }),
       steps: integer(env, 'SVS_STEPS', 20, { min: 4, max: 80 }),
