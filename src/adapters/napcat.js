@@ -208,6 +208,9 @@ export class NapCatAdapter {
       replyVoice: async (filePath, caption = '') => {
         await this.sendPrivateVoice(userId, filePath, caption);
       },
+      sendVoiceTo: async (targetUserId, filePath, caption = '') => {
+        await this.sendPrivateVoice(targetUserId, filePath, caption);
+      },
     };
 
     this.logger?.info('收到 QQ 私聊消息', {

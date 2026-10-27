@@ -14,6 +14,7 @@ import { ImageGenerator } from './images/image-generator.js';
 import { VoiceService } from './voice/voice.js';
 import { BreezeVoiceService } from './voice/breeze.js';
 import { parseVoiceCommand, shouldUseVoice, VoiceModeStore } from './voice/voice-mode.js';
+import { parseCrossVoice } from './voice/cross-send.js';
 import { SingingService } from './singing/singing.js';
 import { OfficialApi } from './adapters/official-api.js';
 import { OfficialAdapter } from './adapters/official.js';
@@ -89,6 +90,50 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
         await message.reply(voiceCommand.reply);
       }
       return;
+    }
+
+    if (message.platform === 'napcat-private') {
+      const crossVoice = parseCrossVoice(message.text, config.family?.relations);
+      if (crossVoice) {
+        const isFather = String(message.userId) === String(config.family?.fatherQq ?? '');
+        if (!isFather) {
+          await message.reply('只有爸爸可以让我给别人发语音。');
+          return;
+        }
+        if (!config.voice.enabled) {
+          await message.reply('语音功能现在是关闭的，先在后台打开“语音回复”。');
+          return;
+        }
+        if (!crossVoice.content) {
+          await message.reply(`要给${crossVoice.targetName}发什么内容？可以说“给${crossVoice.targetName}发语音，说……”。`);
+          return;
+        }
+        if (typeof message.sendVoiceTo !== 'function') {
+          await message.reply('当前接入方式不支持给其他 QQ 发语音。');
+          return;
+        }
+
+        let audio = await breeze.synthesize(crossVoice.content);
+        if (!audio) {
+          audio = await voice.synthesize(crossVoice.content);
+        }
+        if (!audio?.filePath) {
+          await message.reply('这条语音生成失败了，稍后再试。');
+          return;
+        }
+        try {
+          await message.sendVoiceTo(crossVoice.targetUserId, audio.filePath);
+          await message.reply(`已经用语音发给${crossVoice.targetName}了。`);
+        } catch (error) {
+          logger.error('给亲友发送语音失败', {
+            platform: message.platform,
+            userId: message.userId,
+            error,
+          });
+          await message.reply(`给${crossVoice.targetName}发语音失败，可能是好友关系或 NapCat 发送限制。`);
+        }
+        return;
+      }
     }
 
     message.groupContext = groupContext.render(message.platform, message.groupId, {
