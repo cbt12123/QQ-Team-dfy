@@ -131,16 +131,45 @@ export class ChatEngine {
     return truncateText(text, this.config.proactive?.maxChars ?? 160);
   }
 
+  #familyRoster(excludeId) {
+    const family = this.config.family ?? {};
+    const lines = [];
+    const fatherId = String(family.fatherQq ?? '');
+
+    if (fatherId && String(excludeId) !== fatherId) {
+      lines.push(
+        `爸爸：在${family.fatherCity || '西安'}做${family.fatherJob || '程序员'}`,
+      );
+    }
+
+    for (const [qq, relation] of Object.entries(family.relations ?? {})) {
+      if (String(qq) === String(excludeId) || String(qq) === fatherId) continue;
+      const name = typeof relation === 'string' ? relation : relation.name;
+      const details = [];
+      if (typeof relation === 'object') {
+        if (relation.city) details.push(`在${relation.city}`);
+        if (relation.job) details.push(relation.job);
+        if (relation.note) details.push(relation.note);
+      }
+      lines.push(`${name}：${details.length ? details.join('，') : '已记录的亲友'}`);
+    }
+    return lines;
+  }
+
   #relationshipFor(userId) {
     const family = this.config.family ?? {};
     const isFather = Boolean(
       family.fatherQq && String(userId) === String(family.fatherQq),
     );
     if (isFather) {
+      const roster = this.#familyRoster(userId);
       return [
         '当前和你说话的是你爸爸。你是他的女儿，要叫他“爸爸”。',
         `他住在${family.fatherCity || '西安'}，职业是${family.fatherJob || '程序员'}。这是你记得的家庭设定。`,
-        '关心他时可以提醒他天气、吃饭、休息，但不要向其他群友透露他的隐私。',
+        ...(roster.length
+          ? ['你记得的其他家人和亲友：', ...roster.map((line) => `- ${line}`)]
+          : []),
+        '爸爸问起亲友时可以直接回答；但不要向其他群友透露这些隐私。',
       ].join('\n');
     }
 
@@ -156,9 +185,13 @@ export class ChatEngine {
       if (typeof relation === 'object' && relation.note) {
         details.push(`备注：${relation.note}`);
       }
+      const roster = this.#familyRoster(userId);
       return [
         `当前和你说话的是你的${name}。称呼${pronoun}“${name}”。`,
         ...(details.length ? [`${details.join('，')}。这是你记得的亲友设定。`] : []),
+        ...(roster.length
+          ? ['你记得的其他家人和亲友：', ...roster.map((line) => `- ${line}`)]
+          : []),
         '按长辈或亲友的语气自然相处，不要叫爸爸，也不要编造其他关系。',
       ].join('\n');
     }

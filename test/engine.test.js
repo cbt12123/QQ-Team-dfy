@@ -252,6 +252,10 @@ test('ChatEngine injects family relationship and weather data', async () => {
 
   assert.match(calls[0].relationship, /爸爸/);
   assert.match(calls[0].relationship, /西安/);
+  assert.match(calls[0].relationship, /星河叔叔/);
+  assert.match(calls[0].relationship, /妈妈/);
+  assert.match(calls[0].relationship, /海口/);
+  assert.match(calls[0].relationship, /上海/);
   assert.match(calls[0].weather, /18°C/);
   assert.doesNotMatch(calls[1].relationship, /你爸爸/);
   assert.match(calls[2].relationship, /星河叔叔/);
@@ -262,6 +266,8 @@ test('ChatEngine injects family relationship and weather data', async () => {
   assert.match(calls[3].relationship, /海口/);
   assert.match(calls[3].relationship, /应用数学博士/);
   assert.match(calls[3].relationship, /特别牛的学霸/);
+  assert.match(calls[3].relationship, /星河叔叔/);
+  assert.match(calls[3].relationship, /爸爸/);
   assert.equal(calls[4].voice, true);
 });
 
