@@ -12,6 +12,7 @@ import { WeatherService } from './weather/weather.js';
 import { ImageService } from './images/image-service.js';
 import { ImageGenerator } from './images/image-generator.js';
 import { VoiceService } from './voice/voice.js';
+import { SingingService } from './singing/singing.js';
 import { OfficialApi } from './adapters/official-api.js';
 import { OfficialAdapter } from './adapters/official.js';
 import { NapCatAdapter } from './adapters/napcat.js';
@@ -35,6 +36,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
   const vision = new ImageService({ ...config.vision, logger });
   const imageGenerator = new ImageGenerator({ ...config.imageGen, logger });
   const voice = new VoiceService({ ...config.voice, logger });
+  const singing = new SingingService({ ...config.singing, logger });
   const engine = new ChatEngine(config, {
     logger,
     llm,
@@ -72,6 +74,33 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
       excludeMessageId: message.messageId,
       limit: config.groupContext.renderMessages,
     });
+
+    if (singing.shouldSing(message.text) && typeof message.replyVoice === 'function') {
+      const song = await singing.sing(message.text);
+      if (song) {
+        try {
+          await message.replyVoice(song.filePath, song.attribution);
+          groupContext.record({
+            platform: message.platform,
+            groupId: message.groupId,
+            userId: 'bot',
+            userName: config.botName,
+            text: `[唱歌] ${song.lyrics}`,
+            messageId: `bot-sing:${message.messageId || Date.now()}:${Date.now()}`,
+            timestamp: Date.now(),
+            isBot: true,
+          });
+          return;
+        } catch (error) {
+          logger.error('发送唱歌语音失败', {
+            platform: message.platform,
+            groupId: message.groupId,
+            userId: message.userId,
+            error,
+          });
+        }
+      }
+    }
 
     let answer;
     try {
@@ -239,6 +268,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
     vision,
     imageGenerator,
     voice,
+    singing,
     engine,
     adapter,
     proactive,

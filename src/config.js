@@ -244,6 +244,12 @@ export function loadConfig({ argv = [], env = process.env } = {}) {
         max: 48 * 1024 * 1024,
       }),
     },
+    singing: {
+      enabled: boolean(env, 'SVS_ENABLED', true),
+      url: assertHttpUrl(text(env, 'SVS_URL', 'http://127.0.0.1:8765'), 'SVS_URL'),
+      timeoutMs: integer(env, 'SVS_TIMEOUT_MS', 30_000, { min: 5_000, max: 180_000 }),
+      steps: integer(env, 'SVS_STEPS', 20, { min: 4, max: 80 }),
+    },
     voice: {
       enabled: boolean(env, 'VOICE_ENABLED', true),
       always: boolean(env, 'VOICE_ALWAYS', false),

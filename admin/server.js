@@ -34,6 +34,9 @@ const FIELD_MAP = {
   imageGenEnabled: 'IMAGE_GEN_ENABLED',
   imageGenWidth: 'IMAGE_GEN_WIDTH',
   imageGenHeight: 'IMAGE_GEN_HEIGHT',
+  svsEnabled: 'SVS_ENABLED',
+  svsUrl: 'SVS_URL',
+  svsSteps: 'SVS_STEPS',
   voiceEnabled: 'VOICE_ENABLED',
   voiceAlways: 'VOICE_ALWAYS',
   voiceSinging: 'VOICE_SINGING',
@@ -100,6 +103,7 @@ const NUMBER_RULES = {
   imageGenWidth: [256, 2048],
   imageGenHeight: [256, 2048],
   voiceMaxChars: [10, 1000],
+  svsSteps: [4, 80],
 };
 
 const BOOLEAN_FIELDS = new Set([
@@ -110,6 +114,7 @@ const BOOLEAN_FIELDS = new Set([
   'weatherEnabled',
   'visionEnabled',
   'imageGenEnabled',
+  'svsEnabled',
   'voiceEnabled',
   'voiceAlways',
   'voiceSinging',

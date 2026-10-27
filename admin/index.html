@@ -126,8 +126,20 @@
           <div class="card">
             <div class="card-head">
               <div>
+                <h2>唱歌 SVS</h2>
+                <p>独立 DiffSinger 容器，声库：绮萱；失败时回退到 edge-tts 念唱</p>
+              </div>
+            </div>
+            <div class="form-grid">
+              <label class="field wide"><span>SVS 地址</span><input data-field="svsUrl" placeholder="http://127.0.0.1:8765" /><small>容器默认 127.0.0.1:8765</small></label>
+              <label class="field"><span>采样步数</span><input type="number" data-field="svsSteps" min="4" max="80" /><small>越高越慢，20 左右够用</small></label>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div>
                 <h2>语音</h2>
-                <p>edge-tts 生成语音；唱歌为念唱模式，不是真人歌声合成</p>
+                <p>edge-tts 生成正常说话；唱歌优先走 SVS</p>
               </div>
             </div>
             <div class="form-grid">

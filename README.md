@@ -15,7 +15,7 @@
 - 天气查询：Open-Meteo，无需 Key，默认西安
 - 看图：DeepSeek 视觉模型，读取图片内容/截图文字
 - 生图：Pollinations 免 Key，生成后发到群或私聊
-- 语音：edge-tts 生成正常说话；唱歌为“念唱”模式
+- 语音：edge-tts 正常说话；唱歌用独立 DiffSinger SVS 容器，发 QQ 语音
 - DeepSeek / 任意 OpenAI 兼容接口
 - 每个用户独立对话记忆，持久化到磁盘
 - 旁听群聊最近 50 条消息，作为 @ 回复的上下文
@@ -177,7 +177,9 @@ IMAGE_GEN_HEIGHT=1024
 
 注意：看图需要模型服务能访问图片 URL；生图由第三方 Pollinations 提供，网络不稳定时可能失败。
 
-## 语音
+## 语音与唱歌
+
+### 正常说话
 
 语音使用 [edge-tts](https://pypi.org/project/edge-tts/)，不需要 API Key。
 
@@ -202,14 +204,84 @@ VOICE_MAX_CHARS=300
 ```text
 @大肥鱼 发条语音说晚安
 @大肥鱼 用语音说一句鼓励我的话
-@大肥鱼 唱首歌
 ```
 
 私聊也支持。生成的 mp3 会通过 NapCat 的 `record` 段发送，文件和临时音频会定期清理。
 
-说明：`edge-tts` 只能做正常说话。当前的“唱歌”是调整语速/音高的念唱模式，**不是真人歌声合成**。要真正的歌声，需要额外接 DiffSinger / OpenUtau / ACE Studio 这类 SVS 引擎，或提供 MiniMax Music 等服务的 Key。
-
 `VOICE_ALWAYS=1` 可以把所有文字回复都转成语音；默认关闭，避免延迟和刷屏。
+
+### 真唱歌：DiffSinger 容器
+
+唱歌是独立的 SVS 服务，不占用机器人进程：
+
+```text
+QQ -> NapCat record -> 机器人 -> http://127.0.0.1:8765/sing
+                                      |
+                              qqbot-svs 容器（GPU）
+                              DiffSinger + 绮萱声库
+```
+
+使用声库：**绮萱 v2.7.0**（Qixuan，中文可爱少女声线）。
+声库与 vocoder 体积较大，不提交到 Git，需要放到 `/opt/qqbot/models`：
+
+```text
+/opt/qqbot/models/qixuan/Qixuan_v2.7.0_DiffSinger_OpenUtau/
+/opt/qqbot/models/vocoder/pc_nsf_hifigan_44.1k_hop512_128bin_2025.02.onnx
+```
+
+下载：
+
+- 声库：<https://github.com/yqzhishen/qixuan-diffsinger/releases/tag/v2.7.0>
+- vocoder：<https://github.com/openvpi/vocoders/releases/tag/pc-nsf-hifigan-44.1k-hop512-128bin-2025.02>
+
+构建并启动容器：
+
+```bash
+cd svs
+# 本地已有 ubuntu-gpu-python:3.10 时可用它加速；不传则用公共 CUDA 镜像
+docker build --build-arg BASE_IMAGE=nvidia/cuda:12.4.1-base-ubuntu22.04 \
+  -t qqbot-svs:latest .
+docker run -d --name qqbot-svs --gpus all \
+  -p 127.0.0.1:8765:8765 \
+  -v /opt/qqbot/models:/models:ro \
+  --restart unless-stopped \
+  qqbot-svs:latest
+```
+
+或者：
+
+```bash
+cd svs
+docker compose up -d
+```
+
+首次加载模型约 30～60 秒，之后 GPU 推理一段 4 秒唱段约 2～5 秒。
+
+`.env` 配置：
+
+```env
+SVS_ENABLED=1
+SVS_URL=http://127.0.0.1:8765
+SVS_TIMEOUT_MS=60000
+SVS_STEPS=20
+```
+
+触发：
+
+```text
+@大肥鱼 唱首歌
+@大肥鱼 唱一首小星星
+```
+
+当前默认旋律是《小星星》；如果歌词不是小星星，会用同一旋律套歌词。后续可以加 MIDI/自定义旋律。
+
+**授权说明**：绮萱声库使用条款允许非商业/商业作品和网络合成服务，但公开发布需标注“绮萱 / DiffSinger”和 AI 合成。机器人发送唱歌语音时会附带：
+
+```text
+AI 合成：绮萱 / DiffSinger
+```
+
+不要把声库文件、人物形象图或模型权重提交到本仓库。详细条款见声库压缩包内的 `Terms_of_Use.zh-CN.pdf`。
 
 ## 天气
 

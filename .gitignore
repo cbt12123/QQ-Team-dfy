@@ -10,3 +10,5 @@ data/
 .idea/
 .vscode/
 coverage/
+svs/wheels/*.whl
+svs/models/
