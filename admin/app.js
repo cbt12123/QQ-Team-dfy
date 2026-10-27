@@ -35,7 +35,7 @@ const FEATURE_META = {
   svsEnabled: { title: '真唱歌 SVS', desc: '把“唱首歌”请求发给独立 DiffSinger 容器，返回 QQ 语音；失败时回退到念唱。' },
   voiceEnabled: { title: '语音回复', desc: '收到“发语音 / 说给我听 / 唱歌”等请求时，用 edge-tts 生成语音发送。' },
   voiceAlways: { title: '全部用语音', desc: '所有文字回复都转成语音；会增加延迟，不建议一直开。' },
-  voiceSinging: { title: '唱歌（念唱）', desc: '允许“唱首歌”请求；当前是 TTS 念唱，不是真人歌声合成。' },
+  voiceSinging: { title: '允许唱歌', desc: '优先调用 SVS 容器唱真歌声；SVS 不可用时回退到 TTS 念唱。' },
   dryRun: { title: '调试模式', desc: '只把回复打印到日志，不真正发送到 QQ。测试时使用。' },
 };
 
