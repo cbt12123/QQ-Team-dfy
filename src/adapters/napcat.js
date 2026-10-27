@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import WebSocket from 'ws';
 import { analyzeOneBotMessage, splitText } from '../text.js';
 import { collectForwardIds, collectReplyIds, formatForwardMessages } from '../forward.js';
+import { collectImageUrls } from '../images/image-service.js';
 
 const WS_OPEN = 1;
 const WS_CLOSED = 3;
@@ -187,6 +188,7 @@ export class NapCatAdapter {
       text = await this.#expandForwards(event, text);
     }
 
+    const images = collectImageUrls(event.message ?? event.raw_message);
     const userName = String(event.sender?.card || event.sender?.nickname || '');
     const message = {
       platform: 'napcat-private',
@@ -194,10 +196,14 @@ export class NapCatAdapter {
       userId,
       userName,
       text,
+      images,
       messageId,
       raw: event,
       reply: async (answer) => {
         await this.sendPrivateText(userId, answer);
+      },
+      replyImage: async (url, caption = '') => {
+        await this.sendPrivateImage(userId, url, caption);
       },
     };
 
@@ -274,6 +280,7 @@ export class NapCatAdapter {
     let text = this.forwardEnabled
       ? await this.#expandForwards(event, info.text)
       : info.text;
+    const images = collectImageUrls(event.message ?? event.raw_message);
 
     const message = {
       platform: 'napcat',
@@ -281,10 +288,14 @@ export class NapCatAdapter {
       userId,
       userName,
       text,
+      images,
       messageId,
       raw: event,
       reply: async (answer) => {
         await this.sendGroupText(groupId, answer, { mentionUserId: userId });
+      },
+      replyImage: async (url, caption = '') => {
+        await this.sendGroupImage(groupId, url, caption);
       },
     };
 
@@ -329,6 +340,32 @@ export class NapCatAdapter {
       }
       if (index < chunks.length - 1) await sleep(250);
     }
+  }
+
+  async sendGroupImage(groupId, imageUrl, caption = '') {
+    const message = [{ type: 'image', data: { file: imageUrl } }];
+    if (caption) message.push({ type: 'text', data: { text: ` ${caption}` } });
+    if (this.dryRun) {
+      this.logger?.info('[dry-run] NapCat 发图', { groupId, caption });
+      return;
+    }
+    await this.#callApi('send_group_msg', {
+      group_id: groupId,
+      message,
+    });
+  }
+
+  async sendPrivateImage(userId, imageUrl, caption = '') {
+    const message = [{ type: 'image', data: { file: imageUrl } }];
+    if (caption) message.push({ type: 'text', data: { text: ` ${caption}` } });
+    if (this.dryRun) {
+      this.logger?.info('[dry-run] NapCat 私聊发图', { userId: '***', caption });
+      return;
+    }
+    await this.#callApi('send_private_msg', {
+      user_id: userId,
+      message,
+    });
   }
 
   async sendPrivateText(userId, answer) {

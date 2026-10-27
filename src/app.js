@@ -9,6 +9,8 @@ import { ChatEngine } from './chat/engine.js';
 import { ProactivePolicy } from './chat/proactive.js';
 import { WebSearch } from './search/web-search.js';
 import { WeatherService } from './weather/weather.js';
+import { ImageService } from './images/image-service.js';
+import { ImageGenerator } from './images/image-generator.js';
 import { OfficialApi } from './adapters/official-api.js';
 import { OfficialAdapter } from './adapters/official.js';
 import { NapCatAdapter } from './adapters/napcat.js';
@@ -29,7 +31,17 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
   const llm = new LlmClient(config.llm, { logger });
   const search = new WebSearch({ ...config.search, logger });
   const weather = new WeatherService({ ...config.weather, logger });
-  const engine = new ChatEngine(config, { logger, llm, memory, search, weather });
+  const vision = new ImageService({ ...config.vision, logger });
+  const imageGenerator = new ImageGenerator({ ...config.imageGen, logger });
+  const engine = new ChatEngine(config, {
+    logger,
+    llm,
+    memory,
+    search,
+    weather,
+    vision,
+    imageGenerator,
+  });
   let adapter;
   let proactive = null;
 
@@ -73,6 +85,36 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
     }
 
     if (!answer?.text) return;
+
+    if (answer.imageUrl) {
+      if (typeof message.replyImage !== 'function') {
+        answer.text = '图片生成目前只支持 NapCat 接入，当前接入方式发不了图。';
+      } else {
+        try {
+          await message.replyImage(answer.imageUrl, answer.text);
+          groupContext.record({
+            platform: message.platform,
+            groupId: message.groupId,
+            userId: 'bot',
+            userName: config.botName,
+            text: `${answer.text} [图片]`,
+            messageId: `bot-image:${message.messageId || Date.now()}:${Date.now()}`,
+            timestamp: Date.now(),
+            isBot: true,
+          });
+          return;
+        } catch (error) {
+          logger.error('发送生成的图片失败', {
+            platform: message.platform,
+            groupId: message.groupId,
+            userId: message.userId,
+            error,
+          });
+          answer.text = `${answer.text}\n（图片发送失败，稍后再试）`;
+        }
+      }
+    }
+
     try {
       await message.reply(answer.text);
       groupContext.record({
@@ -158,6 +200,8 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
     llm,
     search,
     weather,
+    vision,
+    imageGenerator,
     engine,
     adapter,
     proactive,

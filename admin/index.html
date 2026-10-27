@@ -113,6 +113,19 @@
           <div class="card">
             <div class="card-head">
               <div>
+                <h2>图片能力</h2>
+                <p>看图使用 DeepSeek 视觉模型，生图使用 Pollinations</p>
+              </div>
+            </div>
+            <div class="form-grid">
+              <label class="field"><span>视觉模型</span><input data-field="visionModel" placeholder="deepseek-flash" /><small>需要在同一 LLM_API_KEY 下可用</small></label>
+              <label class="field"><span>生成图片宽度</span><input type="number" data-field="imageGenWidth" min="256" max="2048" step="64" /></label>
+              <label class="field"><span>生成图片高度</span><input type="number" data-field="imageGenHeight" min="256" max="2048" step="64" /></label>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div>
                 <h2>家庭与天气</h2>
                 <p>关系设定只对指定 QQ 生效；天气默认西安</p>
               </div>

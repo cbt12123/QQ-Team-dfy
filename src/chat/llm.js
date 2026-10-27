@@ -48,6 +48,9 @@ export class LlmClient {
     const searchResults = String(options.searchResults ?? '').trim();
     const relationship = String(options.relationship ?? '').trim();
     const weather = String(options.weather ?? '').trim();
+    const images = Array.isArray(options.images)
+      ? options.images.filter((image) => typeof image === 'string' && image)
+      : [];
 
     if (!this.enabled) {
       throw new Error('LLM_API_KEY 未配置');
@@ -66,6 +69,7 @@ export class LlmClient {
           '如果提供了联网搜索结果，优先基于结果回答并给出链接；没有结果或不确定就直说，不要承诺稍后查。',
           '如果提供了天气数据，基于实时数据回答并给出城市和日期，不要凭空编造温度。',
           '关系设定必须遵守：只有设定说当前用户是爸爸时才能叫爸爸，其他人不能乱认。',
+          '如果当前消息附带图片，请结合图片内容回答，可以读图片里的文字；不要假装看到了不存在的细节。',
           ...(relationship ? ['<relationship>', relationship, '</relationship>', ''] : []),
           ...(context
             ? ['<group_context>', context, '</group_context>', '']
@@ -80,6 +84,17 @@ export class LlmClient {
         ].join('\n')
       : userText;
 
+    const userContent = images.length
+      ? [
+          { type: 'text', text: currentContent },
+          ...images.map((url) => ({
+            type: 'image_url',
+            image_url: { url, detail: options.detail ?? 'low' },
+          })),
+        ]
+      : currentContent;
+    const model = options.model || this.model;
+
     try {
       const response = await this.fetchImpl(this.endpoint, {
         method: 'POST',
@@ -89,15 +104,16 @@ export class LlmClient {
           Authorization: `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify({
-          model: this.model,
+          model,
           messages: [
             { role: 'system', content: this.systemPrompt },
             ...history,
-            { role: 'user', content: currentContent },
+            { role: 'user', content: userContent },
           ],
           temperature: this.temperature,
           max_tokens: this.maxTokens,
           stream: false,
+          ...(images.length ? { thinking: { type: 'disabled' } } : {}),
         }),
         signal: controller.signal,
       });
@@ -122,7 +138,8 @@ export class LlmClient {
       }
 
       this.logger?.debug('llm response', {
-        model: this.model,
+        model,
+        images: images.length,
         ms: Date.now() - startedAt,
         chars: Array.from(content).length,
       });

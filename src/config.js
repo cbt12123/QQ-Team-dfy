@@ -234,6 +234,26 @@ export function loadConfig({ argv = [], env = process.env } = {}) {
       timezone: text(env, 'WEATHER_TIMEZONE', 'Asia/Shanghai') || 'Asia/Shanghai',
       timeoutMs: integer(env, 'WEATHER_TIMEOUT_MS', 10_000, { min: 1_000, max: 60_000 }),
     },
+    vision: {
+      enabled: boolean(env, 'VISION_ENABLED', true),
+      model: text(env, 'VISION_MODEL', 'deepseek-flash') || 'deepseek-flash',
+      maxImages: integer(env, 'VISION_MAX_IMAGES', 3, { min: 1, max: 8 }),
+      timeoutMs: integer(env, 'VISION_TIMEOUT_MS', 20_000, { min: 1_000, max: 60_000 }),
+      maxBytes: integer(env, 'VISION_MAX_BYTES', 10 * 1024 * 1024, {
+        min: 100 * 1024,
+        max: 48 * 1024 * 1024,
+      }),
+    },
+    imageGen: {
+      enabled: boolean(env, 'IMAGE_GEN_ENABLED', true),
+      baseUrl: assertHttpUrl(
+        text(env, 'IMAGE_GEN_BASE_URL', 'https://image.pollinations.ai/prompt'),
+        'IMAGE_GEN_BASE_URL',
+      ),
+      width: integer(env, 'IMAGE_GEN_WIDTH', 1024, { min: 256, max: 2048 }),
+      height: integer(env, 'IMAGE_GEN_HEIGHT', 1024, { min: 256, max: 2048 }),
+      model: text(env, 'IMAGE_GEN_MODEL'),
+    },
     official,
     napcat,
     llm,

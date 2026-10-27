@@ -13,6 +13,8 @@
 - 指定 QQ 私聊机器人，私聊有独立记忆，不进入群上下文
 - “大肥鱼”人设：开朗、体贴、调皮、爱碎碎念，只对指定爸爸账号叫爸爸
 - 天气查询：Open-Meteo，无需 Key，默认西安
+- 看图：DeepSeek 视觉模型，读取图片内容/截图文字
+- 生图：Pollinations 免 Key，生成后发到群或私聊
 - DeepSeek / 任意 OpenAI 兼容接口
 - 每个用户独立对话记忆，持久化到磁盘
 - 旁听群聊最近 50 条消息，作为 @ 回复的上下文
@@ -129,6 +131,50 @@ NapCat 已连接，等待群 @ 消息
 - 家庭设定默认：爸爸在西安，是程序员
 
 关系信息由服务端按消息发送者的 QQ 注入，不依赖模型自己猜。所以多群接入时，即使爸爸在别的群说话，也能正确识别。
+
+## 看图与生图
+
+### 看图
+
+使用 DeepSeek 视觉模型 `deepseek-flash`，复用现有的 `LLM_API_KEY`：
+
+```env
+VISION_ENABLED=1
+VISION_MODEL=deepseek-flash
+VISION_MAX_IMAGES=3
+VISION_TIMEOUT_MS=20000
+```
+
+在群里 @ 机器人并附上图片，例如：
+
+```text
+@大肥鱼 看看这张图里是什么
+@大肥鱼 帮我读一下这张截图里的文字
+```
+
+私聊也支持。QQ 图片会先下载，再以 base64 图片输入模型。
+
+### 生图
+
+使用 [Pollinations](https://pollinations.ai/)，免 API Key：
+
+```env
+IMAGE_GEN_ENABLED=1
+IMAGE_GEN_BASE_URL=https://image.pollinations.ai/prompt
+IMAGE_GEN_WIDTH=1024
+IMAGE_GEN_HEIGHT=1024
+```
+
+直接说：
+
+```text
+@大肥鱼 画一张赛博朋克风格的西安城墙
+@大肥鱼 画一只在西安吃泡馍的猫
+```
+
+生成后会把图片发到群里/私聊，并附一句短文字。当前生图只支持 NapCat；官方机器人接入方式不会发送生成的图片。
+
+注意：看图需要模型服务能访问图片 URL；生图由第三方 Pollinations 提供，网络不稳定时可能失败。
 
 ## 天气
 

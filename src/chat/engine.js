@@ -28,12 +28,17 @@ export class ChatEngine {
   #queues = new Map();
   #searchIntents = new Map();
 
-  constructor(config, { logger, llm, memory, search, weather, now = () => Date.now() } = {}) {
+  constructor(
+    config,
+    { logger, llm, memory, search, weather, vision, imageGenerator, now = () => Date.now() } = {},
+  ) {
     this.config = config;
     this.logger = logger;
     this.llm = llm;
     this.search = search;
     this.weather = weather;
+    this.vision = vision;
+    this.imageGenerator = imageGenerator;
     this.memory =
       memory ??
       new ConversationStore({
@@ -264,6 +269,21 @@ export class ChatEngine {
       };
     }
 
+    const generatedImageUrl = this.imageGenerator?.generate(text);
+    if (generatedImageUrl) {
+      this.logger?.info('生成图片', { chars: Array.from(text).length });
+      return {
+        text: '画好了，看看这个～',
+        imageUrl: generatedImageUrl,
+        command: 'image',
+      };
+    }
+
+    let images = [];
+    if (this.vision?.enabled && Array.isArray(message.images) && message.images.length) {
+      images = await this.vision.prepare(message.images);
+    }
+
     const groupContext = String(message.groupContext ?? '').trim();
     let searchResults = '';
     const searchQuery = this.#resolveSearchQuery(text, sessionKey, groupContext);
@@ -289,6 +309,8 @@ export class ChatEngine {
         searchResults,
         weather: weatherData,
         relationship,
+        images,
+        model: images.length ? this.config.vision?.model : undefined,
       });
     } catch (error) {
       this.logger?.error('LLM 调用失败', {

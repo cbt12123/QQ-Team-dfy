@@ -229,6 +229,65 @@ test('ChatEngine injects family relationship and weather data', async () => {
   assert.doesNotMatch(calls[1].relationship, /你爸爸/);
 });
 
+test('ChatEngine returns an image URL for drawing requests', async () => {
+  const engine = new ChatEngine(
+    config(),
+    {
+      llm: { enabled: true, async chat() { throw new Error('should not call LLM'); } },
+      imageGenerator: {
+        generate: () => 'https://image.pollinations.ai/prompt/test',
+      },
+      logger: silentLogger,
+    },
+  );
+
+  const result = await engine.reply({
+    platform: 'napcat',
+    groupId: 'g1',
+    userId: 'u1',
+    userName: '小明',
+    text: '画一张赛博朋克西安城墙',
+    messageId: 'm-image',
+  });
+  assert.equal(result.imageUrl, 'https://image.pollinations.ai/prompt/test');
+});
+
+test('ChatEngine prepares images and uses the vision model', async () => {
+  let captured;
+  const engine = new ChatEngine(
+    config({ vision: { model: 'deepseek-flash' } }),
+    {
+      llm: {
+        enabled: true,
+        async chat(options) {
+          captured = options;
+          return '图片里是一只猫';
+        },
+      },
+      vision: {
+        enabled: true,
+        async prepare() {
+          return ['data:image/jpeg;base64,AAAA'];
+        },
+      },
+      logger: silentLogger,
+    },
+  );
+
+  const result = await engine.reply({
+    platform: 'napcat',
+    groupId: 'g1',
+    userId: 'u1',
+    userName: '小明',
+    text: '看看这张图',
+    images: ['https://example.com/cat.jpg'],
+    messageId: 'm-vision',
+  });
+  assert.match(result.text, /猫/);
+  assert.equal(captured.model, 'deepseek-flash');
+  assert.deepEqual(captured.images, ['data:image/jpeg;base64,AAAA']);
+});
+
 test('ChatEngine.proactiveReply retries once when the model skips', async () => {
   const responses = ['<SKIP>', '确实，这个话题有点意思'];
   const llm = {

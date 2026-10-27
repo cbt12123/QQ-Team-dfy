@@ -418,6 +418,68 @@ test('NapCatAdapter uses the most recent forwarded record when replying to a lat
   }
 });
 
+test('NapCatAdapter sends an image segment through replyImage', async () => {
+  const server = new WebSocketServer({ host: '127.0.0.1', port: 0 });
+  await once(server, 'listening');
+  const { port } = server.address();
+  let action;
+
+  server.on('connection', (socket) => {
+    socket.on('message', (raw) => {
+      const payload = JSON.parse(String(raw));
+      if (payload.action === 'send_group_msg') {
+        action = payload;
+        socket.send(
+          JSON.stringify({
+            status: 'ok',
+            retcode: 0,
+            data: { message_id: 6 },
+            echo: payload.echo,
+          }),
+        );
+      }
+    });
+
+    socket.send(
+      JSON.stringify({
+        post_type: 'message',
+        message_type: 'group',
+        self_id: 10001,
+        group_id: 123456,
+        user_id: 20002,
+        message_id: 9201,
+        time: 1,
+        sender: { nickname: 'test' },
+        message: [
+          { type: 'at', data: { qq: '10001' } },
+          { type: 'text', data: { text: 'draw' } },
+        ],
+      }),
+    );
+  });
+
+  const adapter = new NapCatAdapter({
+    wsUrl: `ws://127.0.0.1:${port}`,
+    logger: silentLogger,
+    onMessage: async (message) => {
+      await message.replyImage('https://example.com/cat.jpg', 'done');
+    },
+    reconnectBaseMs: 20,
+    reconnectMaxMs: 50,
+  });
+
+  try {
+    adapter.start();
+    await waitFor(() => action);
+    assert.equal(action.params.message[0].type, 'image');
+    assert.equal(action.params.message[0].data.file, 'https://example.com/cat.jpg');
+    assert.match(action.params.message[1].data.text, /done/);
+  } finally {
+    await adapter.stop();
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test('NapCatAdapter replies to an allowlisted private QQ', async () => {
   const server = new WebSocketServer({ host: '127.0.0.1', port: 0 });
   await once(server, 'listening');

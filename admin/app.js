@@ -15,6 +15,8 @@ const BOOLEAN_FIELDS = [
   'proactiveEnabled',
   'forwardEnabled',
   'weatherEnabled',
+  'visionEnabled',
+  'imageGenEnabled',
   'dryRun',
 ];
 
@@ -24,6 +26,8 @@ const FEATURE_META = {
   proactiveEnabled: { title: '主动接话', desc: '不用 @ 也会按概率参与群聊；受冷却、每小时上限和群白名单约束。' },
   forwardEnabled: { title: '读取转发记录', desc: '读取直接转发或回复中的聊天记录，并作为当前回答的上下文。' },
   weatherEnabled: { title: '天气查询', desc: '遇到天气、气温、下雨、带伞等问题时，调用 Open-Meteo 获取实时天气。' },
+  visionEnabled: { title: '看图', desc: '下载群里的图片，交给 DeepSeek 视觉模型描述画面或读取图片文字。' },
+  imageGenEnabled: { title: '生成图片', desc: '识别“画一张 / 生成图片 / 来一张”等请求，调用 Pollinations 生成图片并发送到群里。' },
   dryRun: { title: '调试模式', desc: '只把回复打印到日志，不真正发送到 QQ。测试时使用。' },
 };
 
