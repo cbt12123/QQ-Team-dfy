@@ -205,6 +205,9 @@ export class NapCatAdapter {
       replyImage: async (url, caption = '') => {
         await this.sendPrivateImage(userId, url, caption);
       },
+      replyVoice: async (filePath, caption = '') => {
+        await this.sendPrivateVoice(userId, filePath, caption);
+      },
     };
 
     this.logger?.info('收到 QQ 私聊消息', {
@@ -297,6 +300,9 @@ export class NapCatAdapter {
       replyImage: async (url, caption = '') => {
         await this.sendGroupImage(groupId, url, caption);
       },
+      replyVoice: async (filePath, caption = '') => {
+        await this.sendGroupVoice(groupId, filePath, caption);
+      },
     };
 
     this.logger?.info('收到群 @ 消息', {
@@ -351,6 +357,32 @@ export class NapCatAdapter {
     }
     await this.#callApi('send_group_msg', {
       group_id: groupId,
+      message,
+    });
+  }
+
+  async sendGroupVoice(groupId, filePath, caption = '') {
+    const message = [{ type: 'record', data: { file: filePath } }];
+    if (caption) message.push({ type: 'text', data: { text: ` ${caption}` } });
+    if (this.dryRun) {
+      this.logger?.info('[dry-run] NapCat 发语音', { groupId });
+      return;
+    }
+    await this.#callApi('send_group_msg', {
+      group_id: groupId,
+      message,
+    });
+  }
+
+  async sendPrivateVoice(userId, filePath, caption = '') {
+    const message = [{ type: 'record', data: { file: filePath } }];
+    if (caption) message.push({ type: 'text', data: { text: ` ${caption}` } });
+    if (this.dryRun) {
+      this.logger?.info('[dry-run] NapCat 私聊语音', { userId: '***' });
+      return;
+    }
+    await this.#callApi('send_private_msg', {
+      user_id: userId,
       message,
     });
   }

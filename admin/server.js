@@ -34,6 +34,13 @@ const FIELD_MAP = {
   imageGenEnabled: 'IMAGE_GEN_ENABLED',
   imageGenWidth: 'IMAGE_GEN_WIDTH',
   imageGenHeight: 'IMAGE_GEN_HEIGHT',
+  voiceEnabled: 'VOICE_ENABLED',
+  voiceAlways: 'VOICE_ALWAYS',
+  voiceSinging: 'VOICE_SINGING',
+  voiceName: 'VOICE_NAME',
+  voiceRate: 'VOICE_RATE',
+  voicePitch: 'VOICE_PITCH',
+  voiceMaxChars: 'VOICE_MAX_CHARS',
   replyMaxChars: 'REPLY_MAX_CHARS',
   replyMaxParts: 'REPLY_MAX_PARTS',
   maxHistoryTurns: 'MAX_HISTORY_TURNS',
@@ -92,6 +99,7 @@ const NUMBER_RULES = {
   weatherLongitude: [-180, 180],
   imageGenWidth: [256, 2048],
   imageGenHeight: [256, 2048],
+  voiceMaxChars: [10, 1000],
 };
 
 const BOOLEAN_FIELDS = new Set([
@@ -102,6 +110,9 @@ const BOOLEAN_FIELDS = new Set([
   'weatherEnabled',
   'visionEnabled',
   'imageGenEnabled',
+  'voiceEnabled',
+  'voiceAlways',
+  'voiceSinging',
   'proactiveRetryOnSkip',
   'dryRun',
 ]);

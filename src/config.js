@@ -244,6 +244,19 @@ export function loadConfig({ argv = [], env = process.env } = {}) {
         max: 48 * 1024 * 1024,
       }),
     },
+    voice: {
+      enabled: boolean(env, 'VOICE_ENABLED', true),
+      always: boolean(env, 'VOICE_ALWAYS', false),
+      singing: boolean(env, 'VOICE_SINGING', true),
+      bin: text(env, 'VOICE_EDGE_BIN', 'edge-tts') || 'edge-tts',
+      voice: text(env, 'VOICE_NAME', 'zh-CN-XiaoyiNeural') || 'zh-CN-XiaoyiNeural',
+      rate: text(env, 'VOICE_RATE', '+8%') || '+8%',
+      pitch: text(env, 'VOICE_PITCH', '+6Hz') || '+6Hz',
+      volume: text(env, 'VOICE_VOLUME', '+0%') || '+0%',
+      maxChars: integer(env, 'VOICE_MAX_CHARS', 300, { min: 10, max: 1000 }),
+      timeoutMs: integer(env, 'VOICE_TIMEOUT_MS', 30_000, { min: 1_000, max: 120_000 }),
+      dir: resolve(dataDir, 'voice'),
+    },
     imageGen: {
       enabled: boolean(env, 'IMAGE_GEN_ENABLED', true),
       baseUrl: assertHttpUrl(

@@ -11,6 +11,7 @@ import { WebSearch } from './search/web-search.js';
 import { WeatherService } from './weather/weather.js';
 import { ImageService } from './images/image-service.js';
 import { ImageGenerator } from './images/image-generator.js';
+import { VoiceService } from './voice/voice.js';
 import { OfficialApi } from './adapters/official-api.js';
 import { OfficialAdapter } from './adapters/official.js';
 import { NapCatAdapter } from './adapters/napcat.js';
@@ -33,6 +34,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
   const weather = new WeatherService({ ...config.weather, logger });
   const vision = new ImageService({ ...config.vision, logger });
   const imageGenerator = new ImageGenerator({ ...config.imageGen, logger });
+  const voice = new VoiceService({ ...config.voice, logger });
   const engine = new ChatEngine(config, {
     logger,
     llm,
@@ -112,6 +114,40 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
           });
           answer.text = `${answer.text}\n（图片发送失败，稍后再试）`;
         }
+      }
+    }
+
+    if (!answer.imageUrl && voice.shouldSpeak(message.text)) {
+      if (typeof message.replyVoice !== 'function') {
+        answer.text = `${answer.text}\n（当前接入方式不支持发送语音）`;
+      } else {
+        const audio = await voice.synthesize(answer.text, {
+          singing: voice.isSinging(message.text),
+        });
+        if (audio?.filePath) {
+          try {
+            await message.replyVoice(audio.filePath);
+            groupContext.record({
+              platform: message.platform,
+              groupId: message.groupId,
+              userId: 'bot',
+              userName: config.botName,
+              text: '[语音]',
+              messageId: `bot-voice:${message.messageId || Date.now()}:${Date.now()}`,
+              timestamp: Date.now(),
+              isBot: true,
+            });
+            return;
+          } catch (error) {
+            logger.error('发送语音失败', {
+              platform: message.platform,
+              groupId: message.groupId,
+              userId: message.userId,
+              error,
+            });
+          }
+        }
+        answer.text = `${answer.text}\n（语音生成失败，先用文字回复）`;
       }
     }
 
@@ -202,6 +238,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
     weather,
     vision,
     imageGenerator,
+    voice,
     engine,
     adapter,
     proactive,

@@ -15,6 +15,7 @@
 - 天气查询：Open-Meteo，无需 Key，默认西安
 - 看图：DeepSeek 视觉模型，读取图片内容/截图文字
 - 生图：Pollinations 免 Key，生成后发到群或私聊
+- 语音：edge-tts 生成正常说话；唱歌为“念唱”模式
 - DeepSeek / 任意 OpenAI 兼容接口
 - 每个用户独立对话记忆，持久化到磁盘
 - 旁听群聊最近 50 条消息，作为 @ 回复的上下文
@@ -175,6 +176,40 @@ IMAGE_GEN_HEIGHT=1024
 生成后会把图片发到群里/私聊，并附一句短文字。当前生图只支持 NapCat；官方机器人接入方式不会发送生成的图片。
 
 注意：看图需要模型服务能访问图片 URL；生图由第三方 Pollinations 提供，网络不稳定时可能失败。
+
+## 语音
+
+语音使用 [edge-tts](https://pypi.org/project/edge-tts/)，不需要 API Key。
+
+```bash
+python3 -m venv .venv-tts
+.venv-tts/bin/pip install edge-tts
+```
+
+在 `.env` 配置：
+
+```env
+VOICE_ENABLED=1
+VOICE_EDGE_BIN=/opt/qqbot/.venv-tts/bin/edge-tts
+VOICE_NAME=zh-CN-XiaoyiNeural
+VOICE_RATE=+8%
+VOICE_PITCH=+6Hz
+VOICE_MAX_CHARS=300
+```
+
+触发方式：
+
+```text
+@大肥鱼 发条语音说晚安
+@大肥鱼 用语音说一句鼓励我的话
+@大肥鱼 唱首歌
+```
+
+私聊也支持。生成的 mp3 会通过 NapCat 的 `record` 段发送，文件和临时音频会定期清理。
+
+说明：`edge-tts` 只能做正常说话。当前的“唱歌”是调整语速/音高的念唱模式，**不是真人歌声合成**。要真正的歌声，需要额外接 DiffSinger / OpenUtau / ACE Studio 这类 SVS 引擎，或提供 MiniMax Music 等服务的 Key。
+
+`VOICE_ALWAYS=1` 可以把所有文字回复都转成语音；默认关闭，避免延迟和刷屏。
 
 ## 天气
 
