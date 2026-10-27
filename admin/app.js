@@ -14,6 +14,7 @@ const BOOLEAN_FIELDS = [
   'searchEnabled',
   'proactiveEnabled',
   'forwardEnabled',
+  'weatherEnabled',
   'dryRun',
 ];
 
@@ -22,6 +23,7 @@ const FEATURE_META = {
   searchEnabled: { title: '联网搜索', desc: '遇到“查资料 / 搜一下 / 推荐 / 最新 / 案例”等消息时，先搜索再回答。' },
   proactiveEnabled: { title: '主动接话', desc: '不用 @ 也会按概率参与群聊；受冷却、每小时上限和群白名单约束。' },
   forwardEnabled: { title: '读取转发记录', desc: '读取直接转发或回复中的聊天记录，并作为当前回答的上下文。' },
+  weatherEnabled: { title: '天气查询', desc: '遇到天气、气温、下雨、带伞等问题时，调用 Open-Meteo 获取实时天气。' },
   dryRun: { title: '调试模式', desc: '只把回复打印到日志，不真正发送到 QQ。测试时使用。' },
 };
 
@@ -219,6 +221,12 @@ function renderStatus(payload) {
   $('#ovPrivate').textContent = config.privateAllowedUsers
     ? maskGroupList(config.privateAllowedUsers)
     : '未开放';
+  $('#ovFather').textContent = config.familyFatherQq
+    ? maskGroupList(config.familyFatherQq)
+    : '未设置';
+  $('#ovWeather').textContent = config.weatherEnabled
+    ? config.weatherCity || '西安'
+    : '已关闭';
   $('#ovContext').textContent = `${config.groupContextRenderMessages ?? '—'} 条 / ${config.groupContextMaxChars ?? '—'} 字符`;
 }
 
@@ -247,7 +255,11 @@ async function loadConfig() {
   state.personaId = payload.config.personaId ?? 'custom';
   fillForm(state.config);
   renderToggles($('#featureToggles'), BOOLEAN_FIELDS);
-  renderToggles($('#quickToggles'), ['replyEnabled', 'searchEnabled', 'proactiveEnabled', 'forwardEnabled'], true);
+  renderToggles(
+    $('#quickToggles'),
+    ['replyEnabled', 'searchEnabled', 'proactiveEnabled', 'forwardEnabled', 'weatherEnabled'],
+    true,
+  );
   renderPersonas();
   // 动态生成的开关需要绑定
   for (const element of $$('[data-toggle], #quickToggles input, #featureToggles input')) {

@@ -8,6 +8,7 @@ import { LlmClient } from './chat/llm.js';
 import { ChatEngine } from './chat/engine.js';
 import { ProactivePolicy } from './chat/proactive.js';
 import { WebSearch } from './search/web-search.js';
+import { WeatherService } from './weather/weather.js';
 import { OfficialApi } from './adapters/official-api.js';
 import { OfficialAdapter } from './adapters/official.js';
 import { NapCatAdapter } from './adapters/napcat.js';
@@ -27,7 +28,8 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
   });
   const llm = new LlmClient(config.llm, { logger });
   const search = new WebSearch({ ...config.search, logger });
-  const engine = new ChatEngine(config, { logger, llm, memory, search });
+  const weather = new WeatherService({ ...config.weather, logger });
+  const engine = new ChatEngine(config, { logger, llm, memory, search, weather });
   let adapter;
   let proactive = null;
 
@@ -155,6 +157,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
     groupContext,
     llm,
     search,
+    weather,
     engine,
     adapter,
     proactive,

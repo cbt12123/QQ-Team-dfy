@@ -11,6 +11,8 @@
 
 - 群内 `@机器人` 对话，回复会带上 @
 - 指定 QQ 私聊机器人，私聊有独立记忆，不进入群上下文
+- “大肥鱼”人设：开朗、体贴、调皮、爱碎碎念，只对指定爸爸账号叫爸爸
+- 天气查询：Open-Meteo，无需 Key，默认西安
 - DeepSeek / 任意 OpenAI 兼容接口
 - 每个用户独立对话记忆，持久化到磁盘
 - 旁听群聊最近 50 条消息，作为 @ 回复的上下文
@@ -66,6 +68,17 @@ NAPCAT_ALLOWED_GROUPS=你的测试群号
 # 允许私聊机器人的 QQ；留空表示禁止私聊
 NAPCAT_PRIVATE_ALLOWED_USERS=你的QQ号
 
+# 大肥鱼的家庭设定：只有这个 QQ 会被叫“爸爸”
+FAMILY_FATHER_QQ=你的QQ号
+FAMILY_FATHER_CITY=西安
+FAMILY_FATHER_JOB=程序员
+
+# 天气（默认西安）
+WEATHER_ENABLED=1
+WEATHER_CITY=西安
+WEATHER_LATITUDE=34.3416
+WEATHER_LONGITUDE=108.9398
+
 # 允许主动接话的群
 PROACTIVE_ENABLED=1
 PROACTIVE_GROUPS=你的测试群号
@@ -104,6 +117,31 @@ NapCat 已连接，等待群 @ 消息
 ```
 
 在群里 @ 机器人发 `/ping` 测试。
+
+## 大肥鱼人设与家庭设定
+
+管理后台的“性格”里选择 **大肥鱼**：
+
+- 她知道自己的名字叫大肥鱼
+- 性格开朗、体贴、有点调皮，会关心人，也会碎碎念
+- 只有 `FAMILY_FATHER_QQ` 对应的账号会被她叫“爸爸”
+- 其他群友不会被叫爸爸，避免公开认亲
+- 家庭设定默认：爸爸在西安，是程序员
+
+关系信息由服务端按消息发送者的 QQ 注入，不依赖模型自己猜。所以多群接入时，即使爸爸在别的群说话，也能正确识别。
+
+## 天气
+
+默认使用 [Open-Meteo](https://open-meteo.com/)，免 API Key：
+
+```env
+WEATHER_ENABLED=1
+WEATHER_CITY=西安
+WEATHER_LATITUDE=34.3416
+WEATHER_LONGITUDE=108.9398
+```
+
+遇到“天气 / 气温 / 下雨 / 带伞 / 多少度”等问题时，会先取实时天气再回答，并在回复里带上城市和温度。父亲问天气时，大肥鱼会以女儿口吻提醒带伞、加衣。
 
 ## 私聊权限
 
@@ -162,8 +200,8 @@ systemctl restart qqbot
 - `data/` 中的对话记忆和群聊上下文已被排除
 - `.cache/` 中的二维码、安装包、截图已被排除
 - 管理后台不会返回 DeepSeek Key 明文
-- 群号和私聊 QQ 输入框默认隐藏，点击“显示”才展开
-- 概览里的群号、私聊 QQ 使用掩码显示
+- 群号、私聊 QQ、爸爸 QQ 输入框默认隐藏，点击“显示”才展开
+- 概览里的群号、私聊 QQ、爸爸 QQ 使用掩码显示
 - 后台日志中的 groupId / userId / userName / Key 会自动脱敏
 - 不要把管理后台、`.env`、日志截图发到公开群或仓库
 

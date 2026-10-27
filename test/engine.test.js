@@ -189,6 +189,46 @@ test('ChatEngine derives a research query from recent context for meta requests'
   assert.match(searchCalls[0], /具身机器人/);
 });
 
+test('ChatEngine injects family relationship and weather data', async () => {
+  const calls = [];
+  const engine = new ChatEngine(
+    config({
+      family: { fatherQq: '10002', fatherCity: '西安', fatherJob: '程序员' },
+    }),
+    {
+      llm: {
+        enabled: true,
+        async chat(options) {
+          calls.push(options);
+          return '收到';
+        },
+      },
+      weather: {
+        shouldFetch: () => true,
+        async get() {
+          return '[西安天气] 当前 18°C';
+        },
+      },
+      logger: silentLogger,
+    },
+  );
+
+  const base = {
+    platform: 'napcat-private',
+    groupId: 'private:10002',
+    userName: '爸爸',
+    text: '今天天气怎么样',
+    messageId: 'm-family-1',
+  };
+  await engine.reply({ ...base, userId: '10002' });
+  await engine.reply({ ...base, userId: '10003', messageId: 'm-family-2' });
+
+  assert.match(calls[0].relationship, /爸爸/);
+  assert.match(calls[0].relationship, /西安/);
+  assert.match(calls[0].weather, /18°C/);
+  assert.doesNotMatch(calls[1].relationship, /你爸爸/);
+});
+
 test('ChatEngine.proactiveReply retries once when the model skips', async () => {
   const responses = ['<SKIP>', '确实，这个话题有点意思'];
   const llm = {

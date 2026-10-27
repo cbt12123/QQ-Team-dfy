@@ -28,11 +28,12 @@ export class ChatEngine {
   #queues = new Map();
   #searchIntents = new Map();
 
-  constructor(config, { logger, llm, memory, search, now = () => Date.now() } = {}) {
+  constructor(config, { logger, llm, memory, search, weather, now = () => Date.now() } = {}) {
     this.config = config;
     this.logger = logger;
     this.llm = llm;
     this.search = search;
+    this.weather = weather;
     this.memory =
       memory ??
       new ConversationStore({
@@ -62,8 +63,12 @@ export class ChatEngine {
    * Decide whether to join an ongoing group conversation without being @'d.
    * Returns null when the model chooses silence.
    */
-  async proactiveReply({ context = '', triggerText = '' } = {}) {
+  async proactiveReply({ context = '', triggerText = '', userId = '' } = {}) {
     if (!this.llm?.enabled) return null;
+    const relationship = this.#relationshipFor(userId);
+    const weatherData = this.weather?.shouldFetch(triggerText)
+      ? (await this.weather.get()) || '[天气数据暂时获取失败]'
+      : '';
 
     const prompt = [
       '群里正在聊天，没有人 @ 你。你是群友，不是客服，现在处于活跃模式。',
@@ -81,6 +86,8 @@ export class ChatEngine {
         history: [],
         userText: prompt,
         context,
+        relationship,
+        weather: weatherData,
       });
     } catch (error) {
       this.logger?.warn('主动接话判断失败', { error });
@@ -100,6 +107,8 @@ export class ChatEngine {
             `当前群里最后一句是：${triggerText}`,
           ].join('\n'),
           context,
+          relationship,
+          weather: weatherData,
         });
         text = normalizeProactiveText(retry);
       } catch (error) {
@@ -115,6 +124,21 @@ export class ChatEngine {
     if (Array.from(text).length < 2) return null;
 
     return truncateText(text, this.config.proactive?.maxChars ?? 160);
+  }
+
+  #relationshipFor(userId) {
+    const family = this.config.family ?? {};
+    const isFather = Boolean(
+      family.fatherQq && String(userId) === String(family.fatherQq),
+    );
+    if (isFather) {
+      return [
+        '当前和你说话的是你爸爸。你是他的女儿，要叫他“爸爸”。',
+        `他住在${family.fatherCity || '西安'}，职业是${family.fatherJob || '程序员'}。这是你记得的家庭设定。`,
+        '关心他时可以提醒他天气、吃饭、休息，但不要向其他群友透露他的隐私。',
+      ].join('\n');
+    }
+    return '当前用户不是爸爸。不要叫他爸爸，也不要编造父女关系；正常称呼群友即可。';
   }
 
   #resolveSearchQuery(text, sessionKey, groupContext) {
@@ -250,6 +274,12 @@ export class ChatEngine {
         : '[联网搜索没有返回可用结果]';
     }
 
+    let weatherData = '';
+    if (this.weather?.shouldFetch(text)) {
+      weatherData = (await this.weather.get()) || '[天气数据暂时获取失败]';
+    }
+
+    const relationship = this.#relationshipFor(message.userId);
     let answer;
     try {
       answer = await this.llm.chat({
@@ -257,6 +287,8 @@ export class ChatEngine {
         userText: text,
         context: groupContext,
         searchResults,
+        weather: weatherData,
+        relationship,
       });
     } catch (error) {
       this.logger?.error('LLM 调用失败', {

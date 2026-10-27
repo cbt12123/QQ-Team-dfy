@@ -28,6 +28,7 @@ const FIELD_MAP = {
   searchEnabled: 'SEARCH_ENABLED',
   proactiveEnabled: 'PROACTIVE_ENABLED',
   forwardEnabled: 'FORWARD_ENABLED',
+  weatherEnabled: 'WEATHER_ENABLED',
   replyMaxChars: 'REPLY_MAX_CHARS',
   replyMaxParts: 'REPLY_MAX_PARTS',
   maxHistoryTurns: 'MAX_HISTORY_TURNS',
@@ -51,6 +52,12 @@ const FIELD_MAP = {
   proactiveRetryOnSkip: 'PROACTIVE_RETRY_ON_SKIP',
   proactiveQuietHours: 'PROACTIVE_QUIET_HOURS',
   systemPrompt: 'LLM_SYSTEM_PROMPT',
+  familyFatherQq: 'FAMILY_FATHER_QQ',
+  familyFatherCity: 'FAMILY_FATHER_CITY',
+  familyFatherJob: 'FAMILY_FATHER_JOB',
+  weatherCity: 'WEATHER_CITY',
+  weatherLatitude: 'WEATHER_LATITUDE',
+  weatherLongitude: 'WEATHER_LONGITUDE',
   logLevel: 'LOG_LEVEL',
   dryRun: 'BOT_DRY_RUN',
 };
@@ -76,6 +83,8 @@ const NUMBER_RULES = {
   proactiveDebounceMs: [0, 30000],
   proactiveMinChars: [1, 100],
   proactiveMaxChars: [20, 500],
+  weatherLatitude: [-90, 90],
+  weatherLongitude: [-180, 180],
 };
 
 const BOOLEAN_FIELDS = new Set([
@@ -83,6 +92,7 @@ const BOOLEAN_FIELDS = new Set([
   'searchEnabled',
   'proactiveEnabled',
   'forwardEnabled',
+  'weatherEnabled',
   'proactiveRetryOnSkip',
   'dryRun',
 ]);

@@ -73,6 +73,8 @@
                 <div class="kv"><span>白名单群</span><strong id="ovGroups">—</strong></div>
                 <div class="kv"><span>主动接话群</span><strong id="ovProactiveGroups">—</strong></div>
                 <div class="kv"><span>私聊白名单</span><strong id="ovPrivate">—</strong></div>
+                <div class="kv"><span>爸爸账号</span><strong id="ovFather">—</strong></div>
+                <div class="kv"><span>天气城市</span><strong id="ovWeather">—</strong></div>
                 <div class="kv"><span>上下文窗口</span><strong id="ovContext">—</strong></div>
               </div>
             </div>
@@ -107,6 +109,29 @@
               </div>
             </div>
             <div id="featureToggles" class="toggle-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2>家庭与天气</h2>
+                <p>关系设定只对指定 QQ 生效；天气默认西安</p>
+              </div>
+            </div>
+            <div class="form-grid">
+              <label class="field wide">
+                <span>爸爸 QQ</span>
+                <div class="secret-input">
+                  <input type="password" data-field="familyFatherQq" placeholder="123456789" autocomplete="off" />
+                  <button type="button" class="reveal" data-reveal="familyFatherQq">显示</button>
+                </div>
+                <small>只有这个 QQ 会被叫“爸爸”；留空则不启用父女设定。默认隐藏。</small>
+              </label>
+              <label class="field"><span>爸爸所在城市</span><input data-field="familyFatherCity" placeholder="西安" /></label>
+              <label class="field"><span>爸爸职业</span><input data-field="familyFatherJob" placeholder="程序员" /></label>
+              <label class="field"><span>天气城市</span><input data-field="weatherCity" placeholder="西安" /></label>
+              <label class="field"><span>天气纬度</span><input type="number" data-field="weatherLatitude" step="0.0001" /></label>
+              <label class="field"><span>天气经度</span><input type="number" data-field="weatherLongitude" step="0.0001" /></label>
+            </div>
           </div>
           <div class="card">
             <div class="card-head">
