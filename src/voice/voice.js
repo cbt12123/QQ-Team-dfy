@@ -3,6 +3,7 @@ import { promisify } from 'node:util';
 import { existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
+import { isVoiceRequest } from './voice-mode.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -49,12 +50,14 @@ export class VoiceService {
     this.now = now;
   }
 
+  isVoiceRequest(text) {
+    return isVoiceRequest(text);
+  }
+
   shouldSpeak(text) {
     if (!this.enabled) return false;
     if (this.always) return true;
-    return /语音|发语音|说给我听|用语音|听听你|念一段|唱两句|唱一首|唱首歌|唱歌|哼两句/.test(
-      String(text ?? ''),
-    );
+    return this.isVoiceRequest(text);
   }
 
   isSinging(text) {

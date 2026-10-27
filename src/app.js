@@ -13,6 +13,7 @@ import { ImageService } from './images/image-service.js';
 import { ImageGenerator } from './images/image-generator.js';
 import { VoiceService } from './voice/voice.js';
 import { BreezeVoiceService } from './voice/breeze.js';
+import { parseVoiceCommand, shouldUseVoice, VoiceModeStore } from './voice/voice-mode.js';
 import { SingingService } from './singing/singing.js';
 import { OfficialApi } from './adapters/official-api.js';
 import { OfficialAdapter } from './adapters/official.js';
@@ -37,6 +38,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
   const vision = new ImageService({ ...config.vision, logger });
   const imageGenerator = new ImageGenerator({ ...config.imageGen, logger });
   const voice = new VoiceService({ ...config.voice, logger });
+  const voiceModes = new VoiceModeStore(join(dataDir, 'voice-modes.json'));
   const breeze = new BreezeVoiceService({ ...config.breeze, logger });
   const singing = new SingingService({ ...config.singing, logger });
   const engine = new ChatEngine(config, {
@@ -72,9 +74,32 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
       });
       return;
     }
+    const voiceKey = `${message.platform}:${message.groupId}:${message.userId}`;
+    const voiceCommand = parseVoiceCommand(message.text);
+    if (voiceCommand) {
+      if (voiceCommand.mode === 'status') {
+        const current = voiceModes.get(voiceKey);
+        const label = current === 'on' ? '语音' : current === 'off' ? '文字' : '自动';
+        const global = voice.always ? '全局“全部用语音”已开' : '全局“全部用语音”关';
+        await message.reply(
+          `当前聊天：${label}。${global}。\n/语音 开：默认语音\n/文字：默认文字\n/语音 自动：说“发语音”才回语音`,
+        );
+      } else {
+        voiceModes.set(voiceKey, voiceCommand.mode);
+        await message.reply(voiceCommand.reply);
+      }
+      return;
+    }
+
     message.groupContext = groupContext.render(message.platform, message.groupId, {
       excludeMessageId: message.messageId,
       limit: config.groupContext.renderMessages,
+    });
+
+    const useVoice = shouldUseVoice({
+      mode: voiceModes.get(voiceKey),
+      text: message.text,
+      voice,
     });
 
     if (singing.shouldSing(message.text) && typeof message.replyVoice === 'function') {
@@ -148,7 +173,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
       }
     }
 
-    if (!answer.imageUrl && voice.shouldSpeak(message.text)) {
+    if (!answer.imageUrl && useVoice) {
       if (typeof message.replyVoice !== 'function') {
         answer.text = `${answer.text}\n（当前接入方式不支持发送语音）`;
       } else {
