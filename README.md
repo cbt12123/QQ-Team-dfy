@@ -239,7 +239,7 @@ QQ -> NapCat record -> 机器人 -> http://127.0.0.1:8765/sing
 ```bash
 cd svs
 # 本地已有 ubuntu-gpu-python:3.10 时可用它加速；不传则用公共 CUDA 镜像
-docker build --build-arg BASE_IMAGE=nvidia/cuda:12.4.1-base-ubuntu22.04 \
+docker build --build-arg BASE_IMAGE=nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04 \
   -t qqbot-svs:latest .
 docker run -d --name qqbot-svs --gpus all \
   -p 127.0.0.1:8765:8765 \
@@ -262,7 +262,7 @@ docker compose up -d
 ```env
 SVS_ENABLED=1
 SVS_URL=http://127.0.0.1:8765
-SVS_TIMEOUT_MS=60000
+SVS_TIMEOUT_MS=30000
 SVS_STEPS=20
 ```
 
