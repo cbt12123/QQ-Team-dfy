@@ -146,8 +146,18 @@ export class ChatEngine {
 
     const relation = family.relations?.[String(userId)];
     if (relation) {
+      const name = typeof relation === 'string' ? relation : relation.name;
+      const details = [];
+      if (typeof relation === 'object') {
+        if (relation.city) details.push(`他在${relation.city}`);
+        if (relation.job) details.push(`职业是${relation.job}`);
+      }
+      if (typeof relation === 'object' && relation.note) {
+        details.push(`和爸爸的关系是：${relation.note}`);
+      }
       return [
-        `当前和你说话的是你的${relation}。称呼他“${relation}”。`,
+        `当前和你说话的是你的${name}。称呼他“${name}”。`,
+        ...(details.length ? [`${details.join('，')}。这是你记得的亲友设定。`] : []),
         '按长辈或亲友的语气自然相处，不要叫爸爸，也不要编造其他关系。',
       ].join('\n');
     }

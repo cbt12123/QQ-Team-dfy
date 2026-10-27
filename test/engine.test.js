@@ -197,7 +197,14 @@ test('ChatEngine injects family relationship and weather data', async () => {
         fatherQq: '10002',
         fatherCity: '西安',
         fatherJob: '程序员',
-        relations: { '10004': '星河叔叔' },
+        relations: {
+          '10004': {
+            name: '星河叔叔',
+            city: '上海',
+            job: '后端程序员',
+            note: '爸爸的发小',
+          },
+        },
       },
     }),
     {
@@ -241,6 +248,9 @@ test('ChatEngine injects family relationship and weather data', async () => {
   assert.match(calls[0].weather, /18°C/);
   assert.doesNotMatch(calls[1].relationship, /你爸爸/);
   assert.match(calls[2].relationship, /星河叔叔/);
+  assert.match(calls[2].relationship, /上海/);
+  assert.match(calls[2].relationship, /后端程序员/);
+  assert.match(calls[2].relationship, /爸爸的发小/);
   assert.equal(calls[3].voice, true);
 });
 

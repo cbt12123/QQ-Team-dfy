@@ -83,10 +83,19 @@ export function parseIdSet(raw) {
 export function parseRelations(raw) {
   const relations = {};
   for (const item of String(raw ?? '').split(/[,，;\n]+/)) {
-    const match = /^\s*(\d{5,})\s*[:：=]\s*(.+?)\s*$/.exec(item);
-    if (!match) continue;
-    const name = match[2].trim();
-    if (name) relations[match[1]] = name;
+    const parts = item
+      .split(/[:：]/)
+      .map((part) => part.trim())
+      .filter((part) => part !== '');
+    if (parts.length < 2 || !/^\d{5,}$/.test(parts[0])) continue;
+    const [qq, name, city = '', job = '', ...noteParts] = parts;
+    if (!name) continue;
+    relations[qq] = {
+      name,
+      city,
+      job,
+      note: noteParts.join(':'),
+    };
   }
   return relations;
 }
