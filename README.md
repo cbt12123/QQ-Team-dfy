@@ -6,6 +6,7 @@
 
 - 仓库：<https://github.com/cbt12123/QQ-Team-dfy>
 - 管理后台：`http://127.0.0.1:8787`
+- 从零部署：[Ubuntu / WSL 完整部署指南](docs/deployment.md)（含 NapCat、后台、自然接话、美食、更新和排错）
 
 ## 功能
 
