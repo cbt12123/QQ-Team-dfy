@@ -26,6 +26,10 @@ const FIELD_MAP = {
   timeoutMs: 'LLM_TIMEOUT_MS',
   replyEnabled: 'REPLY_ENABLED',
   searchEnabled: 'SEARCH_ENABLED',
+  foodEnabled: 'FOOD_ENABLED',
+  foodRadiusMeters: 'FOOD_RADIUS_METERS',
+  foodMaxResults: 'FOOD_MAX_RESULTS',
+  foodTimeoutMs: 'FOOD_TIMEOUT_MS',
   proactiveEnabled: 'PROACTIVE_ENABLED',
   forwardEnabled: 'FORWARD_ENABLED',
   weatherEnabled: 'WEATHER_ENABLED',
@@ -69,7 +73,8 @@ const FIELD_MAP = {
   proactiveDebounceMs: 'PROACTIVE_DEBOUNCE_MS',
   proactiveMinChars: 'PROACTIVE_MIN_CHARS',
   proactiveMaxChars: 'PROACTIVE_MAX_CHARS',
-  proactiveRetryOnSkip: 'PROACTIVE_RETRY_ON_SKIP',
+  proactiveFollowUpWindowSec: 'PROACTIVE_FOLLOWUP_WINDOW_SEC',
+  proactiveFollowUpCooldownSec: 'PROACTIVE_FOLLOWUP_COOLDOWN_SEC',
   proactiveQuietHours: 'PROACTIVE_QUIET_HOURS',
   systemPrompt: 'LLM_SYSTEM_PROMPT',
   familyFatherQq: 'FAMILY_FATHER_QQ',
@@ -98,9 +103,14 @@ const NUMBER_RULES = {
   groupContextTtlMinutes: [1, 10080],
   searchMaxResults: [1, 10],
   searchTimeoutMs: [1000, 60000],
+  foodRadiusMeters: [300, 10000],
+  foodMaxResults: [1, 5],
+  foodTimeoutMs: [1000, 30000],
   proactiveCooldownSec: [30, 3600],
   proactiveMaxPerHour: [1, 60],
   proactiveChance: [0, 1],
+  proactiveFollowUpWindowSec: [10, 3600],
+  proactiveFollowUpCooldownSec: [0, 60],
   proactiveDebounceMs: [0, 30000],
   proactiveMinChars: [1, 100],
   proactiveMaxChars: [20, 500],
@@ -117,6 +127,7 @@ const NUMBER_RULES = {
 const BOOLEAN_FIELDS = new Set([
   'replyEnabled',
   'searchEnabled',
+  'foodEnabled',
   'proactiveEnabled',
   'forwardEnabled',
   'weatherEnabled',
@@ -127,7 +138,6 @@ const BOOLEAN_FIELDS = new Set([
   'voiceEnabled',
   'voiceAlways',
   'voiceSinging',
-  'proactiveRetryOnSkip',
   'dryRun',
 ]);
 
@@ -179,13 +189,16 @@ function writeEnvValues(updates) {
 
 function publicConfig(env) {
   const config = {};
+  const defaults = { proactiveFollowUpWindowSec: 120, proactiveFollowUpCooldownSec: 3,
+    foodEnabled: true, foodRadiusMeters: 3000, foodMaxResults: 3, foodTimeoutMs: 12000 };
   for (const [field, key] of Object.entries(FIELD_MAP)) {
-    const raw = env[key] ?? '';
+    const raw = env[key] ?? defaults[field] ?? '';
     if (BOOLEAN_FIELDS.has(field)) config[field] = ['1', 'true', 'yes', 'on'].includes(String(raw).toLowerCase());
     else if (field in NUMBER_RULES) config[field] = raw === '' ? null : Number(raw);
     else config[field] = raw;
   }
   config.hasApiKey = Boolean(env.LLM_API_KEY);
+  config.hasAmapKey = Boolean(env.AMAP_API_KEY);
   config.hasAccessToken = Boolean(env.NAPCAT_ACCESS_TOKEN);
   config.personaId = findPersonaByPrompt(env.LLM_SYSTEM_PROMPT)?.id ?? 'custom';
   return config;
@@ -234,6 +247,11 @@ function validateAndMap(body) {
 
   if (typeof merged.llmApiKey === 'string' && merged.llmApiKey.trim()) {
     updates.LLM_API_KEY = merged.llmApiKey.trim();
+  }
+  if (typeof merged.amapApiKey === 'string' && merged.amapApiKey.trim()) {
+    const key = merged.amapApiKey.trim();
+    if (!/^[a-fA-F0-9]{32}$/.test(key)) throw new Error('高德 Key 应为 32 位字母数字凭证，请填写 Web 服务类型 Key');
+    updates.AMAP_API_KEY = key;
   }
   if (typeof merged.systemPrompt === 'string' && merged.systemPrompt.length > 8000) {
     throw new Error('systemPrompt 过长');

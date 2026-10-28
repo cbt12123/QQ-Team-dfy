@@ -58,7 +58,8 @@ export class LlmClient {
     }
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs;
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     const startedAt = Date.now();
     const hasForwardedChat = userText.includes('<forwarded_chat>');
     const needsFraming = Boolean(
@@ -109,12 +110,12 @@ export class LlmClient {
         body: JSON.stringify({
           model,
           messages: [
-            { role: 'system', content: this.systemPrompt },
+            { role: 'system', content: options.systemPrompt ?? this.systemPrompt },
             ...history,
             { role: 'user', content: userContent },
           ],
-          temperature: this.temperature,
-          max_tokens: this.maxTokens,
+          temperature: options.temperature ?? this.temperature,
+          max_tokens: options.maxTokens ?? this.maxTokens,
           stream: false,
           ...(images.length ? { thinking: { type: 'disabled' } } : {}),
         }),
@@ -149,7 +150,7 @@ export class LlmClient {
       return content;
     } catch (error) {
       if (error?.name === 'AbortError') {
-        throw new Error(`LLM 请求超时（${this.timeoutMs}ms）`);
+        throw new Error(`LLM 请求超时（${timeoutMs}ms）`);
       }
       throw error;
     } finally {

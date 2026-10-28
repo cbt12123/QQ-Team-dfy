@@ -30,7 +30,7 @@ export class ChatEngine {
 
   constructor(
     config,
-    { logger, llm, memory, search, weather, vision, imageGenerator, now = () => Date.now() } = {},
+    { logger, llm, memory, search, weather, vision, imageGenerator, food, now = () => Date.now() } = {},
   ) {
     this.config = config;
     this.logger = logger;
@@ -39,6 +39,7 @@ export class ChatEngine {
     this.weather = weather;
     this.vision = vision;
     this.imageGenerator = imageGenerator;
+    this.food = food;
     this.memory =
       memory ??
       new ConversationStore({
@@ -68,27 +69,32 @@ export class ChatEngine {
    * Decide whether to join an ongoing group conversation without being @'d.
    * Returns null when the model chooses silence.
    */
-  async proactiveReply({ context = '', triggerText = '', userId = '' } = {}) {
+  async proactiveReply({ context = '', triggerText = '', userId = '', groupId = '', followUp = false } = {}) {
     if (!this.llm?.enabled) return null;
+    const food = await this.food?.handle({ text: triggerText, sessionKey: `napcat:${groupId}:${userId}` });
+    if (food?.text) return food.text;
     const relationship = this.#relationshipFor(userId);
     const weatherData = this.weather?.shouldFetch(triggerText)
       ? (await this.weather.get()) || '[天气数据暂时获取失败]'
       : '';
 
     const prompt = [
-      '群里正在聊天，没有人 @ 你。你是群友，不是客服，现在处于活跃模式。',
+      '群里正在聊天，没有人 @ 你。你是普通群成员，可以参与，也可以保持沉默。',
+      followUp
+        ? '你刚回复过当前发言者。判断这句话是否在接你的话；如果是，自然继续回答，不需要再次 @。如果他转向别人或已经结束话题，输出 <SKIP>。'
+        : '先判断讨论对象和话题。只有你能自然接话、有内容可说时才参与，不要替别人回答，也不要为了活跃而硬插话。',
       '下面是最近一段群聊，不是只有最后一句话。先理解大家在聊什么，再自然接一句。',
       '如果最后一句只是“是的”“哈哈”“确实”这种附和，要接回上面的主题，不要只对这几个字作答。',
       '规则：',
       '- 想接：只输出 1 句中文，口语化，不 @ 任何人，不长篇，不装懂；可以好奇、追问、吐槽或附和。',
-      '- 只有确实不该接时才输出 <SKIP>。',
+      '- 不适合参与、只是别人之间的对话、没有新内容或话题已结束时，输出 <SKIP>。',
       `当前群里最后一句是：${triggerText}`,
     ].join('\n');
 
     let answer;
     try {
       answer = await this.llm.chat({
-        history: [],
+        history: this.memory.get(`napcat:${groupId}:${userId}`),
         userText: prompt,
         context,
         relationship,
@@ -100,26 +106,6 @@ export class ChatEngine {
     }
 
     let text = normalizeProactiveText(answer);
-    if (!text && this.config.proactive?.retryOnSkip !== false) {
-      // 活跃模式兜底：模型第一次太保守时，再要求它给一句短反应。
-      try {
-        const retry = await this.llm.chat({
-          history: [],
-          userText: [
-            '群里正在聊天，你没有被人 @。现在是活跃模式，必须接一句，不要沉默。',
-            '先看完整段群聊，接当前话题，不要只回复最后几个字。',
-            '只输出一句中文，口语化，不 @ 人，不装懂，可以好奇或追问，不超过 50 字。',
-            `当前群里最后一句是：${triggerText}`,
-          ].join('\n'),
-          context,
-          relationship,
-          weather: weatherData,
-        });
-        text = normalizeProactiveText(retry);
-      } catch (error) {
-        this.logger?.warn('主动接话兜底失败', { error });
-      }
-    }
     if (!text) return null;
 
     text = text
@@ -280,6 +266,7 @@ export class ChatEngine {
       }
       if (command === '/reset' || command === '/重置' || command === '/清空') {
         const cleared = this.memory.clear(sessionKey);
+        this.food?.clear(sessionKey);
         return {
           text: cleared
             ? '已清空我们之间的对话记忆。群聊旁听记录还会按时间自动过期。'
@@ -310,6 +297,14 @@ export class ChatEngine {
       };
     }
 
+    const foodImage = Boolean(message.images?.length && this.food &&
+      (this.food.shouldHandle(text, sessionKey) || this.food.isDeliverySession(sessionKey)));
+    const food = foodImage ? null : await this.food?.handle({ text, sessionKey });
+    if (food?.text) {
+      this.memory.append(sessionKey, text, food.text);
+      return { text: food.text, command: 'food', forceText: true };
+    }
+
     if (!this.llm?.enabled) {
       return {
         text: [
@@ -336,10 +331,14 @@ export class ChatEngine {
     if (this.vision?.enabled && Array.isArray(message.images) && message.images.length) {
       images = await this.vision.prepare(message.images);
     }
+    if (foodImage && !images.length) {
+      return { text: '这张商家列表图没读成功，重发一张清晰截图，或把店名和价格发给我，我再帮你挑。',
+        command: 'food-image-error', forceText: true };
+    }
 
     const groupContext = String(message.groupContext ?? '').trim();
     let searchResults = '';
-    const searchQuery = this.#resolveSearchQuery(text, sessionKey, groupContext);
+    const searchQuery = foodImage ? '' : this.#resolveSearchQuery(text, sessionKey, groupContext);
     if (searchQuery) {
       const results = await this.search.search(searchQuery);
       searchResults = results.length
@@ -357,7 +356,7 @@ export class ChatEngine {
     try {
       answer = await this.llm.chat({
         history: this.memory.get(sessionKey),
-        userText: text,
+        userText: foodImage ? `${text}\n\n请帮用户挑截图里的餐饮商家，只依据截图清晰可见的信息，最多3家，每家“店名＋可见价格＋简短理由”。看不清的价格就说没看清，不猜门店、菜品、评分或口味。说“截图里”以说明信息来源，不能据此保证实时配送、优惠或营业。不要输出链接和长地址，也不要改推地图上的附近餐厅。` : text,
         context: groupContext,
         searchResults,
         weather: weatherData,
@@ -383,6 +382,9 @@ export class ChatEngine {
     answer = String(answer ?? '')
       .replace(/\r\n/g, '\n')
       .trim();
+    if (foodImage) answer = answer
+      .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/gi, '$1')
+      .replace(/https?:\/\/\S+/gi, '').trim();
     if (!answer) {
       return { text: '我想了想，但这次没想出来该说什么，换个问法试试？', command: 'empty-llm' };
     }
@@ -408,6 +410,6 @@ export class ChatEngine {
       contextChars: Array.from(groupContext).length,
     });
 
-    return { text: answer, command: 'chat' };
+    return { text: answer, command: 'chat', ...(foodImage ? { forceText: true } : {}) };
   }
 }

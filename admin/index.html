@@ -3,312 +3,1163 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>QQ 群聊机器人 · 控制台</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <title>大肥鱼 · 工作空间</title>
+    <link rel="stylesheet" href="/styles.css?v=20261029b" />
   </head>
   <body>
     <div class="shell">
-      <header class="topbar">
-        <div class="brand">
-          <div class="brand-mark">阿</div>
+      <aside class="sidebar">
+        <a class="brand" href="#overview" aria-label="大肥鱼工作台"
+          ><div class="brand-mark">
+            <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+              <path
+                d="M9 25c5-13 20-15 28-1-8 14-23 12-28 1Z"
+                fill="currentColor"
+              />
+              <path d="m37 24 8-8v16l-8-8Z" fill="currentColor" />
+              <circle cx="18" cy="22" r="2" fill="#173b33" />
+              <path
+                d="m25 15 4-7 5 11"
+                stroke="currentColor"
+                stroke-width="3"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
           <div>
-            <h1>QQ 群聊机器人</h1>
-            <p>NapCat · DeepSeek · WSL</p>
+            <strong>大肥鱼<span class="brand-period">.</span></strong>
+            <p>A LITTLE MORE HUMAN</p>
+          </div></a
+        >
+        <div class="nav-label">工作空间 <span>WORKSPACE</span></div>
+        <nav class="tabs" aria-label="控制台导航">
+          <button
+            class="tab active"
+            data-tab="overview"
+            type="button"
+            aria-current="page"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="3" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="3" width="7" height="7" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
+              <rect x="14" y="14" width="7" height="7" rx="1.5" /></svg
+            ><span>工作台</span><span class="nav-dot"></span>
+          </button>
+          <button
+            class="tab"
+            data-tab="features"
+            type="button"
+            aria-current="false"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M12 3v4m0 10v4M3 12h4m10 0h4M5.6 5.6l2.8 2.8m7.2 7.2 2.8 2.8M5.6 18.4l2.8-2.8m7.2-7.2 2.8-2.8"
+              />
+              <circle cx="12" cy="12" r="4" /></svg
+            ><span>功能管理</span>
+          </button>
+          <button
+            class="tab"
+            data-tab="thresholds"
+            type="button"
+            aria-current="false"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4 7h16M4 17h16" />
+              <circle cx="8" cy="7" r="3" />
+              <circle cx="16" cy="17" r="3" /></svg
+            ><span>对话与记忆</span>
+          </button>
+          <button
+            class="tab"
+            data-tab="media"
+            type="button"
+            aria-current="false"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M9 18V5l12-2v13M9 8l12-2" />
+              <ellipse cx="6" cy="18" rx="3" ry="3" />
+              <ellipse cx="18" cy="16" rx="3" ry="3" /></svg
+            ><span>语音与图像</span>
+          </button>
+          <button
+            class="tab"
+            data-tab="persona"
+            type="button"
+            aria-current="false"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M20 11a8 8 0 1 1-8-8" />
+              <path
+                d="m15 3 1 3 3 1-3 1-1 3-1-3-3-1 3-1zM8 14s1.5 2 4 2 4-2 4-2"
+              /></svg
+            ><span>人设与模型</span>
+          </button>
+          <button
+            class="tab"
+            data-tab="access"
+            type="button"
+            aria-current="false"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="9" cy="8" r="3" />
+              <path
+                d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m3 10v-2a6 6 0 0 0-3-5"
+              /></svg
+            ><span>关系与范围</span>
+          </button>
+          <button
+            class="tab"
+            data-tab="logs"
+            type="button"
+            aria-current="false"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m5 7 5 5-5 5m8 0h6" /></svg
+            ><span>运行日志</span>
+          </button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="sidebar-note">
+            <span class="note-star">✳</span>
+            <p>让每一次接话，<br />都刚刚好。</p>
+            <span>你的群聊搭子，正在成长。</span>
+          </div>
+          <div class="instance">
+            <span class="instance-icon">鱼</span>
+            <div>
+              <strong id="instanceName">大肥鱼</strong><span>本地工作空间</span>
+            </div>
+            <span class="instance-dot" id="instanceDot"></span>
           </div>
         </div>
-        <div class="top-actions">
-          <span id="saveState" class="save-state">已同步</span>
-          <button id="refreshBtn" class="btn ghost" type="button">刷新</button>
-          <button id="restartBtn" class="btn ghost" type="button">重启机器人</button>
-          <button id="saveBtn" class="btn primary" type="button">保存并重启</button>
-        </div>
-      </header>
-
-      <section class="status-row" id="statusRow">
-        <div class="status-card">
-          <span class="status-label">机器人</span>
-          <strong id="botStatus" class="status-value">读取中</strong>
-          <span id="botSince" class="status-sub"></span>
-        </div>
-        <div class="status-card">
-          <span class="status-label">NapCat</span>
-          <strong id="napcatStatus" class="status-value">读取中</strong>
-          <span id="napcatSince" class="status-sub"></span>
-        </div>
-        <div class="status-card">
-          <span class="status-label">模型</span>
-          <strong id="modelStatus" class="status-value">—</strong>
-          <span id="keyStatus" class="status-sub">—</span>
-        </div>
-        <div class="status-card">
-          <span class="status-label">功能</span>
-          <strong id="featureStatus" class="status-value">—</strong>
-          <span id="groupStatus" class="status-sub">—</span>
-        </div>
-      </section>
-
-      <nav class="tabs" aria-label="设置分类">
-        <button class="tab active" data-tab="overview" type="button">概览</button>
-        <button class="tab" data-tab="features" type="button">功能开关</button>
-        <button class="tab" data-tab="thresholds" type="button">阈值</button>
-        <button class="tab" data-tab="persona" type="button">性格</button>
-        <button class="tab" data-tab="logs" type="button">日志</button>
-      </nav>
-
-      <main>
-        <section id="panel-overview" class="panel active">
-          <div class="grid two">
-            <div class="card">
-              <div class="card-head">
+      </aside>
+      <div class="workspace">
+        <header class="topbar">
+          <div class="breadcrumb">
+            工作空间 <span>/</span> <strong id="breadcrumbPage">工作台</strong>
+          </div>
+          <div class="top-actions">
+            <span id="saveState" class="save-state">已同步</span
+            ><button
+              id="refreshBtn"
+              class="btn icon-btn"
+              type="button"
+              aria-label="刷新状态"
+              title="刷新状态"
+            >
+              ↻</button
+            ><button id="restartBtn" class="btn ghost" type="button">
+              重启机器人</button
+            ><button id="saveBtn" class="btn primary" type="button">
+              保存并应用 <span>↗</span>
+            </button>
+          </div>
+        </header>
+        <div class="content">
+          <div class="page-heading">
+            <div>
+              <div class="eyebrow" id="pageEyebrow">OVERVIEW</div>
+              <h1 id="pageTitle">工作台</h1>
+              <p id="pageDescription">照看好状态，剩下的交给大肥鱼。</p>
+            </div>
+            <div class="workspace-tag"><span></span> 本地工作空间</div>
+          </div>
+          <main>
+            <section id="panel-overview" class="panel active">
+              <div class="welcome-card">
+                <div class="welcome-copy">
+                  <div class="welcome-kicker">
+                    <span class="live-dot"></span> YOUR EVERYDAY COMPANION
+                  </div>
+                  <h2>今天，也要好好接话<span>。</span></h2>
+                  <p>
+                    不必每句都 @，也能自然聊下去。<br />把握一点分寸，多一点陪伴。
+                  </p>
+                  <button class="text-link" data-go="thresholds" type="button">
+                    调整接话方式 <span>↗</span>
+                  </button>
+                </div>
+                <div class="fish-scene" aria-hidden="true">
+                  <div class="orbit orbit-one"></div>
+                  <div class="orbit orbit-two"></div>
+                  <span class="scene-star star-one">✳</span
+                  ><span class="scene-star star-two">+</span>
+                  <div class="scene-fish">
+                    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                      <path
+                        d="M9 25c5-13 20-15 28-1-8 14-23 12-28 1Z"
+                        fill="currentColor"
+                      />
+                      <path d="m37 24 8-8v16l-8-8Z" fill="currentColor" />
+                      <circle cx="18" cy="22" r="2" fill="#173b33" />
+                      <path
+                        d="m25 15 4-7 5 11"
+                        stroke="currentColor"
+                        stroke-width="3"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <span class="bubble bubble-one"></span
+                  ><span class="bubble bubble-two"></span
+                  ><span class="scene-caption">JUST KEEP CHATTING.</span>
+                </div>
+              </div>
+              <div class="section-caption">
+                <h2>运行状态</h2>
+                <span>每 12 秒自动更新 <i class="tiny-dot"></i></span>
+              </div>
+              <section class="status-row" aria-label="服务状态">
+                <div class="status-card">
+                  <div class="metric-top">
+                    <span class="status-label">机器人服务</span
+                    ><span class="metric-icon"
+                      ><svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.6"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                        <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                        <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                        <rect
+                          x="14"
+                          y="14"
+                          width="7"
+                          height="7"
+                          rx="1.5"
+                        /></svg
+                    ></span>
+                  </div>
+                  <strong id="botStatus" class="status-value">读取中</strong
+                  ><span id="botSince" class="status-sub">等待服务状态</span>
+                </div>
+                <div class="status-card">
+                  <div class="metric-top">
+                    <span class="status-label">QQ 接入服务</span
+                    ><span class="metric-icon"
+                      ><svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.6"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <circle cx="9" cy="8" r="3" />
+                        <path
+                          d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m3 10v-2a6 6 0 0 0-3-5"
+                        /></svg
+                    ></span>
+                  </div>
+                  <strong id="napcatStatus" class="status-value">读取中</strong
+                  ><span id="napcatSince" class="status-sub"
+                    >NapCat · OneBot</span
+                  >
+                </div>
+                <div class="status-card">
+                  <div class="metric-top">
+                    <span class="status-label">对话模型</span
+                    ><span class="metric-icon"
+                      ><svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.6"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M20 11a8 8 0 1 1-8-8" />
+                        <path
+                          d="m15 3 1 3 3 1-3 1-1 3-1-3-3-1 3-1zM8 14s1.5 2 4 2 4-2 4-2"
+                        /></svg
+                    ></span>
+                  </div>
+                  <strong id="modelStatus" class="status-value">—</strong
+                  ><span id="keyStatus" class="status-sub">等待模型配置</span>
+                </div>
+                <div class="status-card">
+                  <div class="metric-top">
+                    <span class="status-label">启用能力</span
+                    ><span class="metric-icon"
+                      ><svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.6"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M12 3v4m0 10v4M3 12h4m10 0h4M5.6 5.6l2.8 2.8m7.2 7.2 2.8 2.8M5.6 18.4l2.8-2.8m7.2-7.2 2.8-2.8"
+                        />
+                        <circle cx="12" cy="12" r="4" /></svg
+                    ></span>
+                  </div>
+                  <strong id="featureStatus" class="status-value">—</strong
+                  ><span id="groupStatus" class="status-sub">等待运行范围</span>
+                </div>
+              </section>
+              <div class="behavior-strip">
                 <div>
-                  <h2>运行概览</h2>
-                  <p>当前机器人、NapCat 与功能状态</p>
+                  <span class="behavior-icon">↗</span
+                  ><strong>像群友一样参与</strong>
                 </div>
-                <span id="healthBadge" class="pill">—</span>
+                <span>主动判断 <b id="behaviorChance">—</b></span
+                ><span>续聊窗口 <b id="behaviorWindow">—</b></span
+                ><span>每小时上限 <b id="behaviorLimit">—</b></span
+                ><button
+                  class="text-link"
+                  data-go="thresholds"
+                  type="button"
+                  aria-label="修改接话设置"
+                >
+                  修改设置 ↗
+                </button>
               </div>
-              <div class="kv-list">
-                <div class="kv"><span>机器人服务</span><strong id="ovBot">—</strong></div>
-                <div class="kv"><span>NapCat 服务</span><strong id="ovNapcat">—</strong></div>
-                <div class="kv"><span>DeepSeek Key</span><strong id="ovKey">—</strong></div>
-                <div class="kv"><span>白名单群</span><strong id="ovGroups">—</strong></div>
-                <div class="kv"><span>主动接话群</span><strong id="ovProactiveGroups">—</strong></div>
-                <div class="kv"><span>私聊白名单</span><strong id="ovPrivate">—</strong></div>
-                <div class="kv"><span>爸爸账号</span><strong id="ovFather">—</strong></div>
-                <div class="kv"><span>天气城市</span><strong id="ovWeather">—</strong></div>
-                <div class="kv"><span>上下文窗口</span><strong id="ovContext">—</strong></div>
-              </div>
-            </div>
-            <div class="card">
-              <div class="card-head">
-                <div>
-                  <h2>快捷开关</h2>
-                  <p>保存后自动重启机器人</p>
-                </div>
-              </div>
-              <div id="quickToggles" class="quick-toggles"></div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <h2>最近日志</h2>
-                <p>来自 systemd journal，自动刷新</p>
-              </div>
-              <button class="btn ghost small" id="overviewLogRefresh" type="button">刷新</button>
-            </div>
-            <pre id="overviewLogs" class="log-view compact">加载中…</pre>
-          </div>
-        </section>
 
-        <section id="panel-features" class="panel">
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <h2>功能开关</h2>
-                <p>关闭后需要保存并重启才会生效</p>
-              </div>
-            </div>
-            <div id="featureToggles" class="toggle-list"></div>
-          </div>
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <h2>图片能力</h2>
-                <p>看图使用 DeepSeek 视觉模型，生图使用 Pollinations</p>
-              </div>
-            </div>
-            <div class="form-grid">
-              <label class="field"><span>视觉模型</span><input data-field="visionModel" placeholder="deepseek-flash" /><small>需要在同一 LLM_API_KEY 下可用</small></label>
-              <label class="field"><span>生成图片宽度</span><input type="number" data-field="imageGenWidth" min="256" max="2048" step="64" /></label>
-              <label class="field"><span>生成图片高度</span><input type="number" data-field="imageGenHeight" min="256" max="2048" step="64" /></label>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <h2>Breeze 语音</h2>
-                <p>Breeze TTS 2；只负责正常说话，不唱歌</p>
-              </div>
-            </div>
-            <div class="form-grid">
-              <label class="field wide"><span>Breeze 地址</span><input data-field="breezeUrl" placeholder="http://127.0.0.1:7860" /><small>容器默认 127.0.0.1:7860</small></label>
-              <label class="field wide"><span>音色描述</span><input data-field="breezeInstruction" placeholder="一位可爱、活泼、声音清甜的少女……" /><small>用自然语言描述音色和语气</small></label>
-              <label class="field"><span>CFG Scale</span><input type="number" data-field="breezeCfgScale" min="1" max="8" step="0.5" /></label>
-              <label class="field"><span>Seed</span><input type="number" data-field="breezeSeed" min="0" max="2147483647" /></label>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <h2>唱歌 SVS</h2>
-                <p>独立 DiffSinger 容器，声库：绮萱；失败时回退到 edge-tts 念唱</p>
-              </div>
-            </div>
-            <div class="form-grid">
-              <label class="field wide"><span>SVS 地址</span><input data-field="svsUrl" placeholder="http://127.0.0.1:8765" /><small>容器默认 127.0.0.1:8765</small></label>
-              <label class="field"><span>采样步数</span><input type="number" data-field="svsSteps" min="4" max="80" /><small>越高越慢，20 左右够用</small></label>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <h2>语音</h2>
-                <p>edge-tts 生成正常说话；唱歌优先走 SVS</p>
-              </div>
-            </div>
-            <div class="form-grid">
-              <label class="field"><span>音色</span><input data-field="voiceName" placeholder="zh-CN-XiaoyiNeural" /><small>如 zh-CN-XiaoxiaoNeural / zh-CN-XiaoyiNeural</small></label>
-              <label class="field"><span>语速</span><input data-field="voiceRate" placeholder="+8%" /></label>
-              <label class="field"><span>音高</span><input data-field="voicePitch" placeholder="+6Hz" /></label>
-              <label class="field"><span>最大朗读字数</span><input type="number" data-field="voiceMaxChars" min="10" max="1000" /></label>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <h2>家庭与天气</h2>
-                <p>关系设定只对指定 QQ 生效；天气默认西安</p>
-              </div>
-            </div>
-            <div class="form-grid">
-              <label class="field wide">
-                <span>爸爸 QQ</span>
-                <div class="secret-input">
-                  <input type="password" data-field="familyFatherQq" placeholder="123456789" autocomplete="off" />
-                  <button type="button" class="reveal" data-reveal="familyFatherQq">显示</button>
+              <div class="grid two">
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h2>工作空间信息</h2>
+                      <p>连接配置与运行范围，一眼掌握</p>
+                    </div>
+                    <span id="healthBadge" class="pill">—</span>
+                  </div>
+                  <div class="kv-list">
+                    <div class="kv">
+                      <span>机器人服务</span><strong id="ovBot">—</strong>
+                    </div>
+                    <div class="kv">
+                      <span>NapCat 服务</span><strong id="ovNapcat">—</strong>
+                    </div>
+                    <div class="kv">
+                      <span>DeepSeek Key</span><strong id="ovKey">—</strong>
+                    </div>
+                    <div class="kv">
+                      <span>白名单群</span><strong id="ovGroups">—</strong>
+                    </div>
+                    <div class="kv">
+                      <span>主动接话群</span
+                      ><strong id="ovProactiveGroups">—</strong>
+                    </div>
+                    <div class="kv">
+                      <span>私聊白名单</span><strong id="ovPrivate">—</strong>
+                    </div>
+                    <div class="kv">
+                      <span>爸爸账号</span><strong id="ovFather">—</strong>
+                    </div>
+                    <div class="kv">
+                      <span>天气城市</span><strong id="ovWeather">—</strong>
+                    </div>
+                    <div class="kv">
+                      <span>上下文窗口</span><strong id="ovContext">—</strong>
+                    </div>
+                  </div>
                 </div>
-                <small>只有这个 QQ 会被叫“爸爸”；留空则不启用父女设定。默认隐藏。</small>
-              </label>
-              <label class="field"><span>爸爸所在城市</span><input data-field="familyFatherCity" placeholder="西安" /></label>
-              <label class="field"><span>爸爸职业</span><input data-field="familyFatherJob" placeholder="程序员" /></label>
-              <label class="field wide">
-                <span>其他亲友关系</span>
-                <div class="secret-input">
-                  <input type="password" data-field="familyRelations" placeholder="2913487935:星河叔叔" autocomplete="off" />
-                  <button type="button" class="reveal" data-reveal="familyRelations">显示</button>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h2>快捷开关</h2>
+                      <p>保存后自动重启机器人</p>
+                    </div>
+                  </div>
+                  <div id="quickToggles" class="quick-toggles"></div>
                 </div>
-                <small>格式 QQ:称呼:城市:职业:备注，多个用逗号分隔；默认隐藏。例：2913487935:星河叔叔:上海:后端程序员:爸爸的发小</small>
-              </label>
-              <label class="field"><span>天气城市</span><input data-field="weatherCity" placeholder="西安" /></label>
-              <label class="field"><span>天气纬度</span><input type="number" data-field="weatherLatitude" step="0.0001" /></label>
-              <label class="field"><span>天气经度</span><input type="number" data-field="weatherLongitude" step="0.0001" /></label>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <h2>群与运行范围</h2>
-                <p>多个群号用英文逗号分隔</p>
               </div>
-            </div>
-            <div class="form-grid">
-              <label class="field wide">
-                <span>@ 回复白名单</span>
-                <div class="secret-input">
-                  <input type="password" data-field="napcatAllowedGroups" placeholder="123456789,987654321" autocomplete="off" />
-                  <button type="button" class="reveal" data-reveal="napcatAllowedGroups">显示</button>
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <h2>最近日志</h2>
+                    <p>服务运行记录 · 仅展示最近 60 行</p>
+                  </div>
+                  <div class="log-actions">
+                    <button class="text-link" data-go="logs" type="button">
+                      查看全部 ↗</button
+                    ><button
+                      class="btn ghost small"
+                      id="overviewLogRefresh"
+                      type="button"
+                    >
+                      刷新
+                    </button>
+                  </div>
                 </div>
-                <small>留空表示不限制；建议只填测试群。默认隐藏，点击“显示”查看。</small>
-              </label>
-              <label class="field wide">
-                <span>主动接话群</span>
-                <div class="secret-input">
-                  <input type="password" data-field="proactiveGroups" placeholder="123456789" autocomplete="off" />
-                  <button type="button" class="reveal" data-reveal="proactiveGroups">显示</button>
-                </div>
-                <small>只有这些群会主动插话。默认隐藏。</small>
-              </label>
-              <label class="field wide">
-                <span>私聊白名单 QQ</span>
-                <div class="secret-input">
-                  <input type="password" data-field="privateAllowedUsers" placeholder="123456789" autocomplete="off" />
-                  <button type="button" class="reveal" data-reveal="privateAllowedUsers">显示</button>
-                </div>
-                <small>只有这些 QQ 可以私聊机器人；留空表示禁止私聊。默认隐藏。</small>
-              </label>
-            </div>
-          </div>
-        </section>
+                <pre id="overviewLogs" class="log-view compact">加载中…</pre>
+              </div>
+            </section>
 
-        <section id="panel-thresholds" class="panel">
-          <div class="grid two">
-            <div class="card">
-              <div class="card-head"><div><h2>回复与上下文</h2><p>控制回复长度和记忆范围</p></div></div>
-              <div class="form-grid">
-                <label class="field"><span>回复最大字符</span><input type="number" data-field="replyMaxChars" min="100" max="4500" /><small>单条最大长度</small></label>
-                <label class="field"><span>最多回复条数</span><input type="number" data-field="replyMaxParts" min="1" max="5" /><small>长回答拆分上限</small></label>
-                <label class="field"><span>每用户记忆轮数</span><input type="number" data-field="maxHistoryTurns" min="0" max="50" /><small>0 表示不记</small></label>
-                <label class="field"><span>对话记忆分钟</span><input type="number" data-field="historyTtlMinutes" min="1" max="10080" /></label>
-                <label class="field"><span>群上下文条数</span><input type="number" data-field="groupContextRenderMessages" min="5" max="100" /><small>每次带入模型的最近消息</small></label>
-                <label class="field"><span>群上下文保留分钟</span><input type="number" data-field="groupContextTtlMinutes" min="1" max="10080" /></label>
-                <label class="field"><span>群上下文最大字符</span><input type="number" data-field="groupContextMaxChars" min="500" max="30000" /></label>
-                <label class="field"><span>单条消息截断</span><input type="number" data-field="groupContextMessageChars" min="50" max="2000" /></label>
+            <section
+              id="panel-features"
+              class="panel"
+              aria-labelledby="pageTitle"
+            >
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <h2>功能开关</h2>
+                    <p>关闭后需要保存并重启才会生效</p>
+                  </div>
+                </div>
+                <div id="featureToggles" class="toggle-list"></div>
               </div>
-            </div>
-            <div class="card">
-              <div class="card-head"><div><h2>搜索</h2><p>联网搜索的条数与超时</p></div></div>
-              <div class="form-grid">
-                <label class="field"><span>最多结果数</span><input type="number" data-field="searchMaxResults" min="1" max="10" /></label>
-                <label class="field"><span>搜索超时（毫秒）</span><input type="number" data-field="searchTimeoutMs" min="1000" max="60000" step="500" /></label>
+
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <h2>附近美食</h2>
+                    <p>说出你的位置，找几家值得考虑的店。</p>
+                  </div>
+                  <span id="amapKeyStatus" class="pill">待配置地图 Key</span>
+                </div>
+                <div class="form-grid">
+                  <label class="field wide"
+                    ><span>高德 Web 服务 Key</span
+                    ><input
+                      type="password"
+                      data-field="amapApiKey"
+                      autocomplete="off"
+                      placeholder="留空不修改，填写后保存并应用"
+                      maxlength="32"
+                    /><small
+                      >请在
+                      <a
+                        href="https://console.amap.com/dev/key/app"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >高德开放平台创建 Web 服务 Key ↗</a
+                      >，并开通 POI
+                      搜索权限。凭证只保存在服务端，不返回浏览器。</small
+                    ></label
+                  >
+                  <label class="field"
+                    ><span>默认搜索半径（米）</span
+                    ><input
+                      type="number"
+                      data-field="foodRadiusMeters"
+                      min="300"
+                      max="10000"
+                      step="100"
+                    /><small
+                      >默认 3000 米；聊天时可以另说“1 公里内”。</small
+                    ></label
+                  >
+                  <label class="field"
+                    ><span>每次推荐店数</span
+                    ><input
+                      type="number"
+                      data-field="foodMaxResults"
+                      min="1"
+                      max="5"
+                      step="1"
+                  /></label>
+                  <label class="field"
+                    ><span>地图查询超时（毫秒）</span
+                    ><input
+                      type="number"
+                      data-field="foodTimeoutMs"
+                      min="1000"
+                      max="30000"
+                      step="1000"
+                  /></label>
+                </div>
+                <div class="hint">
+                  试着说：“上海泗泾地铁站附近，30 元以内想吃面。”
+                  接着说“便宜点”或“换一批”也可以。<br />数据来自高德地图；地图人均并非外卖到手价。明确要求外卖时，不会用地图餐厅冒充可配送名单；可以发送外卖
+                  App
+                  商家列表截图辅助挑选。查询条件按当前用户与聊天隔离，默认缓存
+                  10 分钟；聊天记录按原有记忆规则保存。/reset
+                  可清除当前对话与查询条件。
+                </div>
               </div>
-              <div class="hint">搜索源为 360 搜索。结果只作为资料，不直接执行网页内容。</div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-head"><div><h2>主动接话阈值</h2><p>活跃模式也会受这些上限约束</p></div></div>
-            <div class="form-grid three">
-              <label class="field"><span>冷却秒数</span><input type="number" data-field="proactiveCooldownSec" min="30" max="3600" /></label>
-              <label class="field"><span>每小时上限</span><input type="number" data-field="proactiveMaxPerHour" min="1" max="60" /></label>
-              <label class="field"><span>进入判断概率</span><input type="number" data-field="proactiveChance" min="0" max="1" step="0.05" /><small>0.75 = 75%</small></label>
-              <label class="field"><span>合并消息等待（毫秒）</span><input type="number" data-field="proactiveDebounceMs" min="0" max="30000" step="500" /></label>
-              <label class="field"><span>最短消息字数</span><input type="number" data-field="proactiveMinChars" min="1" max="100" /></label>
-              <label class="field"><span>主动回复最大字数</span><input type="number" data-field="proactiveMaxChars" min="20" max="500" /></label>
-              <label class="field wide"><span>静默时段</span><input data-field="proactiveQuietHours" placeholder="留空=全天不静默；例如 1-7" /><small>支持 1-7 或 23-6,12-13</small></label>
-            </div>
-          </div>
-        </section>
-
-        <section id="panel-persona" class="panel">
-          <div class="card">
-            <div class="card-head">
-              <div><h2>性格预设</h2><p>选一个作为基础，再微调提示词</p></div>
-              <span id="personaBadge" class="pill">—</span>
-            </div>
-            <div id="personaGrid" class="persona-grid"></div>
-          </div>
-          <div class="card">
-            <div class="card-head"><div><h2>自定义人设</h2><p>会写入 LLM_SYSTEM_PROMPT</p></div></div>
-            <div class="form-grid">
-              <label class="field"><span>机器人名字</span><input data-field="botName" placeholder="阿岚" /></label>
-              <label class="field"><span>温度</span><input type="number" data-field="temperature" min="0" max="2" step="0.05" /><small>越高越放飞</small></label>
-              <label class="field"><span>模型</span><input data-field="model" placeholder="deepseek-chat" /></label>
-              <label class="field"><span>最大 tokens</span><input type="number" data-field="maxTokens" min="1" max="16000" /></label>
-              <label class="field wide"><span>人设提示词</span><textarea data-field="systemPrompt" rows="8"></textarea><small>建议保持单段；保存时会自动折叠换行</small></label>
-              <label class="field wide"><span>替换 DeepSeek Key（可选）</span><input type="password" data-field="llmApiKey" placeholder="留空表示不修改" autocomplete="off" /></label>
-            </div>
-          </div>
-        </section>
-
-        <section id="panel-logs" class="panel">
-          <div class="card">
-            <div class="card-head">
-              <div><h2>运行日志</h2><p>systemd journal · qqbot.service</p></div>
-              <div class="log-actions">
-                <select id="logLines"><option value="80">80 行</option><option value="160" selected>160 行</option><option value="300">300 行</option></select>
-                <button class="btn ghost small" id="logRefresh" type="button">刷新</button>
+            </section>
+            <section id="panel-media" class="panel" aria-labelledby="pageTitle">
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <h2>图片能力</h2>
+                    <p>看图使用 DeepSeek 视觉模型，生图使用 Pollinations</p>
+                  </div>
+                </div>
+                <div class="form-grid">
+                  <label class="field"
+                    ><span>视觉模型</span
+                    ><input
+                      data-field="visionModel"
+                      placeholder="deepseek-flash"
+                    /><small>需要在同一 LLM_API_KEY 下可用</small></label
+                  >
+                  <label class="field"
+                    ><span>生成图片宽度</span
+                    ><input
+                      type="number"
+                      data-field="imageGenWidth"
+                      min="256"
+                      max="2048"
+                      step="64"
+                  /></label>
+                  <label class="field"
+                    ><span>生成图片高度</span
+                    ><input
+                      type="number"
+                      data-field="imageGenHeight"
+                      min="256"
+                      max="2048"
+                      step="64"
+                  /></label>
+                </div>
               </div>
-            </div>
-            <pre id="fullLogs" class="log-view">加载中…</pre>
-          </div>
-        </section>
-      </main>
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <h2>Breeze 语音</h2>
+                    <p>Breeze TTS 2；只负责正常说话，不唱歌</p>
+                  </div>
+                </div>
+                <div class="form-grid">
+                  <label class="field wide"
+                    ><span>Breeze 地址</span
+                    ><input
+                      data-field="breezeUrl"
+                      placeholder="http://127.0.0.1:7860"
+                    /><small>容器默认 127.0.0.1:7860</small></label
+                  >
+                  <label class="field wide"
+                    ><span>音色描述</span
+                    ><input
+                      data-field="breezeInstruction"
+                      placeholder="一位可爱、活泼、声音清甜的少女……"
+                    /><small>用自然语言描述音色和语气</small></label
+                  >
+                  <label class="field"
+                    ><span>CFG Scale</span
+                    ><input
+                      type="number"
+                      data-field="breezeCfgScale"
+                      min="1"
+                      max="8"
+                      step="0.5"
+                  /></label>
+                  <label class="field"
+                    ><span>Seed</span
+                    ><input
+                      type="number"
+                      data-field="breezeSeed"
+                      min="0"
+                      max="2147483647"
+                  /></label>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <h2>唱歌 SVS</h2>
+                    <p>
+                      独立 DiffSinger 容器，声库：绮萱；失败时回退到 edge-tts
+                      念唱
+                    </p>
+                  </div>
+                </div>
+                <div class="form-grid">
+                  <label class="field wide"
+                    ><span>SVS 地址</span
+                    ><input
+                      data-field="svsUrl"
+                      placeholder="http://127.0.0.1:8765"
+                    /><small>容器默认 127.0.0.1:8765</small></label
+                  >
+                  <label class="field"
+                    ><span>采样步数</span
+                    ><input
+                      type="number"
+                      data-field="svsSteps"
+                      min="4"
+                      max="80"
+                    /><small>越高越慢，20 左右够用</small></label
+                  >
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <h2>语音</h2>
+                    <p>edge-tts 生成正常说话；唱歌优先走 SVS</p>
+                  </div>
+                </div>
+                <div class="form-grid">
+                  <label class="field"
+                    ><span>音色</span
+                    ><input
+                      data-field="voiceName"
+                      placeholder="zh-CN-XiaoyiNeural"
+                    /><small
+                      >如 zh-CN-XiaoxiaoNeural / zh-CN-XiaoyiNeural</small
+                    ></label
+                  >
+                  <label class="field"
+                    ><span>语速</span
+                    ><input data-field="voiceRate" placeholder="+8%"
+                  /></label>
+                  <label class="field"
+                    ><span>音高</span
+                    ><input data-field="voicePitch" placeholder="+6Hz"
+                  /></label>
+                  <label class="field"
+                    ><span>最大朗读字数</span
+                    ><input
+                      type="number"
+                      data-field="voiceMaxChars"
+                      min="10"
+                      max="1000"
+                  /></label>
+                </div>
+              </div>
+            </section>
+            <section
+              id="panel-access"
+              class="panel"
+              aria-labelledby="pageTitle"
+            >
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <h2>家庭与天气</h2>
+                    <p>关系设定只对指定 QQ 生效；天气默认西安</p>
+                  </div>
+                </div>
+                <div class="form-grid">
+                  <label class="field wide">
+                    <span>爸爸 QQ</span>
+                    <div class="secret-input">
+                      <input
+                        type="password"
+                        data-field="familyFatherQq"
+                        placeholder="123456789"
+                        autocomplete="off"
+                      />
+                      <button
+                        type="button"
+                        class="reveal"
+                        data-reveal="familyFatherQq"
+                      >
+                        显示
+                      </button>
+                    </div>
+                    <small
+                      >只有这个 QQ
+                      会被叫“爸爸”；留空则不启用父女设定。默认隐藏。</small
+                    >
+                  </label>
+                  <label class="field"
+                    ><span>爸爸所在城市</span
+                    ><input data-field="familyFatherCity" placeholder="西安"
+                  /></label>
+                  <label class="field"
+                    ><span>爸爸职业</span
+                    ><input data-field="familyFatherJob" placeholder="程序员"
+                  /></label>
+                  <label class="field wide">
+                    <span>其他亲友关系</span>
+                    <div class="secret-input">
+                      <input
+                        type="password"
+                        data-field="familyRelations"
+                        placeholder="2913487935:星河叔叔"
+                        autocomplete="off"
+                      />
+                      <button
+                        type="button"
+                        class="reveal"
+                        data-reveal="familyRelations"
+                      >
+                        显示
+                      </button>
+                    </div>
+                    <small
+                      >格式
+                      QQ:称呼:城市:职业:备注，多个用逗号分隔；默认隐藏。例：2913487935:星河叔叔:上海:后端程序员:爸爸的发小</small
+                    >
+                  </label>
+                  <label class="field"
+                    ><span>天气城市</span
+                    ><input data-field="weatherCity" placeholder="西安"
+                  /></label>
+                  <label class="field"
+                    ><span>天气纬度</span
+                    ><input
+                      type="number"
+                      data-field="weatherLatitude"
+                      step="0.0001"
+                  /></label>
+                  <label class="field"
+                    ><span>天气经度</span
+                    ><input
+                      type="number"
+                      data-field="weatherLongitude"
+                      step="0.0001"
+                  /></label>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <h2>群与运行范围</h2>
+                    <p>多个群号用英文逗号分隔</p>
+                  </div>
+                </div>
+                <div class="form-grid">
+                  <label class="field wide">
+                    <span>@ 回复白名单</span>
+                    <div class="secret-input">
+                      <input
+                        type="password"
+                        data-field="napcatAllowedGroups"
+                        placeholder="123456789,987654321"
+                        autocomplete="off"
+                      />
+                      <button
+                        type="button"
+                        class="reveal"
+                        data-reveal="napcatAllowedGroups"
+                      >
+                        显示
+                      </button>
+                    </div>
+                    <small
+                      >留空表示不限制；建议只填测试群。默认隐藏，点击“显示”查看。</small
+                    >
+                  </label>
+                  <label class="field wide">
+                    <span>主动接话群</span>
+                    <div class="secret-input">
+                      <input
+                        type="password"
+                        data-field="proactiveGroups"
+                        placeholder="123456789"
+                        autocomplete="off"
+                      />
+                      <button
+                        type="button"
+                        class="reveal"
+                        data-reveal="proactiveGroups"
+                      >
+                        显示
+                      </button>
+                    </div>
+                    <small>只有这些群会主动插话。默认隐藏。</small>
+                  </label>
+                  <label class="field wide">
+                    <span>私聊白名单 QQ</span>
+                    <div class="secret-input">
+                      <input
+                        type="password"
+                        data-field="privateAllowedUsers"
+                        placeholder="123456789"
+                        autocomplete="off"
+                      />
+                      <button
+                        type="button"
+                        class="reveal"
+                        data-reveal="privateAllowedUsers"
+                      >
+                        显示
+                      </button>
+                    </div>
+                    <small
+                      >只有这些 QQ
+                      可以私聊机器人；留空表示禁止私聊。默认隐藏。</small
+                    >
+                  </label>
+                </div>
+              </div>
+            </section>
 
-      <footer class="footer">
-        <span>本控制台默认只监听 127.0.0.1，请勿直接暴露公网。</span>
-        <span id="footerTime">—</span>
-      </footer>
+            <section id="panel-thresholds" class="panel">
+              <div class="grid two">
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h2>回复与上下文</h2>
+                      <p>控制回复长度和记忆范围</p>
+                    </div>
+                  </div>
+                  <div class="form-grid">
+                    <label class="field"
+                      ><span>回复最大字符</span
+                      ><input
+                        type="number"
+                        data-field="replyMaxChars"
+                        min="100"
+                        max="4500"
+                      /><small>单条最大长度</small></label
+                    >
+                    <label class="field"
+                      ><span>最多回复条数</span
+                      ><input
+                        type="number"
+                        data-field="replyMaxParts"
+                        min="1"
+                        max="5"
+                      /><small>长回答拆分上限</small></label
+                    >
+                    <label class="field"
+                      ><span>每用户记忆轮数</span
+                      ><input
+                        type="number"
+                        data-field="maxHistoryTurns"
+                        min="0"
+                        max="50"
+                      /><small>0 表示不记</small></label
+                    >
+                    <label class="field"
+                      ><span>对话记忆分钟</span
+                      ><input
+                        type="number"
+                        data-field="historyTtlMinutes"
+                        min="1"
+                        max="10080"
+                    /></label>
+                    <label class="field"
+                      ><span>群上下文条数</span
+                      ><input
+                        type="number"
+                        data-field="groupContextRenderMessages"
+                        min="5"
+                        max="100"
+                      /><small>每次带入模型的最近消息</small></label
+                    >
+                    <label class="field"
+                      ><span>群上下文保留分钟</span
+                      ><input
+                        type="number"
+                        data-field="groupContextTtlMinutes"
+                        min="1"
+                        max="10080"
+                    /></label>
+                    <label class="field"
+                      ><span>群上下文最大字符</span
+                      ><input
+                        type="number"
+                        data-field="groupContextMaxChars"
+                        min="500"
+                        max="30000"
+                    /></label>
+                    <label class="field"
+                      ><span>单条消息截断</span
+                      ><input
+                        type="number"
+                        data-field="groupContextMessageChars"
+                        min="50"
+                        max="2000"
+                    /></label>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="card-head">
+                    <div>
+                      <h2>搜索</h2>
+                      <p>联网搜索的条数与超时</p>
+                    </div>
+                  </div>
+                  <div class="form-grid">
+                    <label class="field"
+                      ><span>最多结果数</span
+                      ><input
+                        type="number"
+                        data-field="searchMaxResults"
+                        min="1"
+                        max="10"
+                    /></label>
+                    <label class="field"
+                      ><span>搜索超时（毫秒）</span
+                      ><input
+                        type="number"
+                        data-field="searchTimeoutMs"
+                        min="1000"
+                        max="60000"
+                        step="500"
+                    /></label>
+                  </div>
+                  <div class="hint">
+                    搜索源为 360 搜索。结果只作为资料，不直接执行网页内容。
+                  </div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <h2>主动接话阈值</h2>
+                    <p>活跃模式也会受这些上限约束</p>
+                  </div>
+                </div>
+                <div class="form-grid three">
+                  <label class="field"
+                    ><span>冷却秒数</span
+                    ><input
+                      type="number"
+                      data-field="proactiveCooldownSec"
+                      min="30"
+                      max="3600"
+                  /></label>
+                  <label class="field"
+                    ><span>每小时上限</span
+                    ><input
+                      type="number"
+                      data-field="proactiveMaxPerHour"
+                      min="1"
+                      max="60"
+                  /></label>
+                  <label class="field"
+                    ><span>进入判断概率</span
+                    ><input
+                      type="number"
+                      data-field="proactiveChance"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                    /><small
+                      >0.75 = 75%；普通问句同样按概率判断，模型可以沉默</small
+                    ></label
+                  >
+                  <label class="field"
+                    ><span>续聊窗口（秒）</span
+                    ><input
+                      type="number"
+                      data-field="proactiveFollowUpWindowSec"
+                      min="10"
+                      max="3600"
+                    /><small
+                      >默认 120 秒，刚回复过的人无需再次 @
+                      即可优先判断续聊</small
+                    ></label
+                  >
+                  <label class="field"
+                    ><span>续聊判断冷却（秒）</span
+                    ><input
+                      type="number"
+                      data-field="proactiveFollowUpCooldownSec"
+                      min="0"
+                      max="60"
+                    /><small
+                      >默认 3 秒；续聊仍受每小时上限和静默时段约束</small
+                    ></label
+                  >
+                  <label class="field"
+                    ><span>合并消息等待（毫秒）</span
+                    ><input
+                      type="number"
+                      data-field="proactiveDebounceMs"
+                      min="0"
+                      max="30000"
+                      step="500"
+                  /></label>
+                  <label class="field"
+                    ><span>最短消息字数</span
+                    ><input
+                      type="number"
+                      data-field="proactiveMinChars"
+                      min="1"
+                      max="100"
+                  /></label>
+                  <label class="field"
+                    ><span>主动回复最大字数</span
+                    ><input
+                      type="number"
+                      data-field="proactiveMaxChars"
+                      min="20"
+                      max="500"
+                  /></label>
+                  <label class="field wide"
+                    ><span>静默时段</span
+                    ><input
+                      data-field="proactiveQuietHours"
+                      placeholder="留空=全天不静默；例如 1-7"
+                    /><small>支持 1-7 或 23-6,12-13</small></label
+                  >
+                </div>
+              </div>
+            </section>
+
+            <section id="panel-persona" class="panel">
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <h2>性格预设</h2>
+                    <p>
+                      给大肥鱼一点自己的性格。选择预设，或从自己的想法开始。
+                    </p>
+                  </div>
+                  <span id="personaBadge" class="pill">—</span>
+                </div>
+                <div id="personaGrid" class="persona-grid"></div>
+              </div>
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <h2>自定义人设</h2>
+                    <p>设定她是谁，也留一点自由发挥的空间。</p>
+                  </div>
+                </div>
+                <div class="form-grid">
+                  <label class="field"
+                    ><span>机器人名字</span
+                    ><input data-field="botName" placeholder="阿岚"
+                  /></label>
+                  <label class="field"
+                    ><span>温度</span
+                    ><input
+                      type="number"
+                      data-field="temperature"
+                      min="0"
+                      max="2"
+                      step="0.05"
+                    /><small>越高越放飞</small></label
+                  >
+                  <label class="field"
+                    ><span>模型</span
+                    ><input data-field="model" placeholder="deepseek-chat"
+                  /></label>
+                  <label class="field"
+                    ><span>最大 tokens</span
+                    ><input
+                      type="number"
+                      data-field="maxTokens"
+                      min="1"
+                      max="16000"
+                  /></label>
+                  <label class="field wide"
+                    ><span>人设提示词</span
+                    ><textarea data-field="systemPrompt" rows="8"></textarea
+                    ><small>建议保持单段；保存时会自动折叠换行</small></label
+                  >
+                  <label class="field wide"
+                    ><span>替换 DeepSeek Key（可选）</span
+                    ><input
+                      type="password"
+                      data-field="llmApiKey"
+                      placeholder="留空表示不修改"
+                      autocomplete="off"
+                  /></label>
+                </div>
+              </div>
+            </section>
+
+            <section id="panel-logs" class="panel">
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <h2>运行日志</h2>
+                    <p>了解每一次连接、判断与回复。</p>
+                  </div>
+                  <div class="log-actions">
+                    <select id="logLines">
+                      <option value="80">80 行</option>
+                      <option value="160" selected>160 行</option>
+                      <option value="300">300 行</option>
+                    </select>
+                    <button
+                      class="btn ghost small"
+                      id="logRefresh"
+                      type="button"
+                    >
+                      刷新
+                    </button>
+                  </div>
+                </div>
+                <div class="log-toolbar">
+                  <label class="log-search"
+                    ><span>⌕</span
+                    ><input
+                      id="logQuery"
+                      type="search"
+                      placeholder="筛选日志内容…"
+                      aria-label="筛选日志内容" /></label
+                  ><button id="copyLogs" class="btn ghost small" type="button">
+                    复制日志
+                  </button>
+                </div>
+                <pre id="fullLogs" class="log-view">加载中…</pre>
+              </div>
+            </section>
+          </main>
+
+          <footer class="footer">
+            <span
+              >大肥鱼控制台
+              <span class="footer-divider">/</span> 用心接话，自然相处。</span
+            >
+            <span id="footerTime">—</span>
+          </footer>
+        </div>
+      </div>
     </div>
     <div id="toast" class="toast" role="status"></div>
-    <script type="module" src="/app.js"></script>
+    <script type="module" src="/app.js?v=20261029b"></script>
   </body>
 </html>

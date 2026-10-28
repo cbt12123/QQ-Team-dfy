@@ -9,6 +9,8 @@ export class ProactivePolicy {
   #lastAttempt = new Map();
   #speaks = new Map();
   #generation = new Map();
+  #lastReply = new Map();
+  #inFlight = new Set();
 
   constructor({
     config,
@@ -51,11 +53,19 @@ export class ProactivePolicy {
       return false;
     }
 
-    const text = String(event.text ?? '').trim();
-    if (!this.#isCandidate(text)) return false;
-    if (!this.#canAttempt(groupId)) return false;
+    // Any new message invalidates an answer based on an older group snapshot.
+    this.cancel(groupId);
+    if (event.directedToOthers) {
+      this.#lastReply.delete(groupId);
+      return false;
+    }
 
-    this.#pending.set(groupId, { ...event, groupId, text });
+    const text = String(event.text ?? '').trim();
+    const followUp = Boolean(event.replyToBot) || this.#isFollowUp(groupId, event.userId);
+    if (!this.#isCandidate(text, followUp)) return false;
+    if (!this.#canAttempt(groupId, followUp)) return false;
+
+    this.#pending.set(groupId, { ...event, groupId, text, followUp });
     clearTimeout(this.#timers.get(groupId));
     const timer = setTimeout(() => {
       this.#timers.delete(groupId);
@@ -64,6 +74,16 @@ export class ProactivePolicy {
     timer.unref?.();
     this.#timers.set(groupId, timer);
     return true;
+  }
+
+  noteReply(groupId, userId) {
+    this.#lastReply.set(String(groupId), { userId: String(userId), at: this.now() });
+  }
+
+  #isFollowUp(groupId, userId) {
+    const last = this.#lastReply.get(groupId);
+    return Boolean(last && last.userId === String(userId) &&
+      this.now() - last.at < (this.config.followUpWindowMs ?? 120_000));
   }
 
   cancel(groupId) {
@@ -75,32 +95,29 @@ export class ProactivePolicy {
   }
 
   close() {
+    for (const groupId of this.#inFlight) this.cancel(groupId);
     for (const timer of this.#timers.values()) clearTimeout(timer);
     this.#timers.clear();
     this.#pending.clear();
+    this.#lastReply.clear();
   }
 
-  #isCandidate(text) {
-    if (text.length < this.config.minChars) return false;
+  #isCandidate(text, followUp) {
+    if (text.length < (followUp ? 1 : this.config.minChars)) return false;
     if (text.startsWith('/')) return false;
     if (/^\[(图片|语音|视频|文件|表情|卡片|聊天记录)\]$/.test(text)) return false;
     if (/https?:\/\//i.test(text)) return false;
 
-    const isQuestion =
-      /[?？]|吗|咋|怎么|为什么|为啥|谁|什么|哪|如何|能不能|有没有|是不是/.test(text);
-    if (isQuestion) return true;
-
-    const mentionsBot = text.includes(this.config.botName ?? '');
-    if (mentionsBot) return true;
-
-    return this.random() < this.config.chance;
+    // Questions in a group are not necessarily addressed to the bot.
+    return followUp || this.random() < this.config.chance;
   }
 
-  #canAttempt(groupId) {
+  #canAttempt(groupId, followUp = false) {
     if (this.quietHours.has(this.hour())) return false;
 
-    const lastAttempt = this.#lastAttempt.get(groupId) ?? 0;
-    if (this.now() - lastAttempt < this.config.cooldownMs) return false;
+    const lastAttempt = this.#lastAttempt.get(groupId);
+    const cooldown = followUp ? (this.config.followUpCooldownMs ?? 3000) : this.config.cooldownMs;
+    if (lastAttempt !== undefined && this.now() - lastAttempt < cooldown) return false;
     return this.#speaksInLastHour(groupId) < this.config.maxPerHour;
   }
 
@@ -114,7 +131,7 @@ export class ProactivePolicy {
   async #fire(groupId) {
     const event = this.#pending.get(groupId);
     this.#pending.delete(groupId);
-    if (!event || !this.#canAttempt(groupId)) return;
+    if (!event || !this.#canAttempt(groupId, event.followUp)) return;
 
     const generation = this.#generation.get(groupId) ?? 0;
     this.#lastAttempt.set(groupId, this.now());
@@ -128,15 +145,20 @@ export class ProactivePolicy {
     });
 
     let answer;
+    this.#inFlight.add(groupId);
     try {
       answer = await this.engine.proactiveReply({
         context,
         triggerText: event.text,
         userId: event.userId,
+        groupId,
+        followUp: event.followUp,
       });
     } catch (error) {
       this.logger?.warn('主动接话生成失败', { groupId, error });
       return;
+    } finally {
+      this.#inFlight.delete(groupId);
     }
 
     if (!answer) {
@@ -144,7 +166,7 @@ export class ProactivePolicy {
       return;
     }
     if ((this.#generation.get(groupId) ?? 0) !== generation) {
-      this.logger?.debug('主动接话已被新的 @ 取消', { groupId });
+      this.logger?.debug('主动接话已被新消息取消', { groupId });
       return;
     }
     if (this.#speaksInLastHour(groupId) >= this.config.maxPerHour) return;
@@ -158,7 +180,8 @@ export class ProactivePolicy {
 
     const now = this.now();
     this.#speaks.set(groupId, [...(this.#speaks.get(groupId) ?? []), now]);
-    this.onBotMessage?.({ groupId, text: answer });
+    this.noteReply(groupId, event.userId);
+    this.onBotMessage?.({ groupId, userId: event.userId, triggerText: event.text, text: answer });
     this.logger?.info('主动接话已发送', {
       groupId,
       chars: Array.from(answer).length,

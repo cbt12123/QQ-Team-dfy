@@ -21,12 +21,14 @@ export class NapCatAdapter {
   #seen = new Set();
   #forwardCache = new Map();
   #recentForwards = new Map();
+  #sentGroups = new Map();
 
   constructor({
     wsUrl = 'ws://127.0.0.1:3001',
     accessToken = '',
     onMessage,
     onGroupMessage,
+    onBotReply,
     logger,
     dryRun = false,
     replyMaxChars = 1200,
@@ -48,6 +50,7 @@ export class NapCatAdapter {
     this.accessToken = accessToken;
     this.onMessage = onMessage;
     this.onGroupMessage = onGroupMessage;
+    this.onBotReply = onBotReply;
     this.logger = logger;
     this.dryRun = dryRun;
     this.replyMaxChars = replyMaxChars;
@@ -256,7 +259,9 @@ export class NapCatAdapter {
       });
     }
 
-    // 所有群消息都进入旁听缓存；只有被 @ 时才生成回复。
+    const replyIds = collectReplyIds(event.message ?? event.raw_message);
+    const replyToBot = replyIds.length > 0 && replyIds.every((id) => this.#sentGroups.get(id) === groupId);
+    // All messages are observed; mentions reply directly, others use participation policy.
     try {
       this.onGroupMessage?.({
         platform: 'napcat',
@@ -269,6 +274,8 @@ export class NapCatAdapter {
           Number(event.time) > 0 ? Number(event.time) * 1000 : Date.now(),
         isBot: false,
         mentioned: info.mentioned,
+        directedToOthers: info.mentionsOthers || (replyIds.length > 0 && !replyToBot),
+        replyToBot,
       });
     } catch (error) {
       this.logger?.warn('记录群聊上下文失败', { groupId, error });
@@ -299,12 +306,15 @@ export class NapCatAdapter {
       raw: event,
       reply: async (answer) => {
         await this.sendGroupText(groupId, answer, { mentionUserId: userId });
+        this.onBotReply?.({ groupId, userId });
       },
       replyImage: async (url, caption = '') => {
         await this.sendGroupImage(groupId, url, caption);
+        this.onBotReply?.({ groupId, userId });
       },
       replyVoice: async (filePath, caption = '') => {
         await this.sendGroupVoice(groupId, filePath, caption);
+        this.onBotReply?.({ groupId, userId });
       },
     };
 
@@ -342,10 +352,11 @@ export class NapCatAdapter {
           content: chunk,
         });
       } else {
-        await this.#callApi('send_group_msg', {
+        const result = await this.#callApi('send_group_msg', {
           group_id: groupId,
           message: segments,
         });
+        this.#rememberSent(groupId, result);
       }
       if (index < chunks.length - 1) await sleep(250);
     }
@@ -358,10 +369,11 @@ export class NapCatAdapter {
       this.logger?.info('[dry-run] NapCat 发图', { groupId, caption });
       return;
     }
-    await this.#callApi('send_group_msg', {
+    const result = await this.#callApi('send_group_msg', {
       group_id: groupId,
       message,
     });
+    this.#rememberSent(groupId, result);
   }
 
   async sendGroupVoice(groupId, filePath, caption = '') {
@@ -371,10 +383,17 @@ export class NapCatAdapter {
       this.logger?.info('[dry-run] NapCat 发语音', { groupId });
       return;
     }
-    await this.#callApi('send_group_msg', {
+    const result = await this.#callApi('send_group_msg', {
       group_id: groupId,
       message,
     });
+    this.#rememberSent(groupId, result);
+  }
+
+  #rememberSent(groupId, result) {
+    if (result?.message_id === undefined) return;
+    this.#sentGroups.set(String(result.message_id), String(groupId));
+    if (this.#sentGroups.size > 1000) this.#sentGroups.delete(this.#sentGroups.keys().next().value);
   }
 
   async sendPrivateVoice(userId, filePath, caption = '') {

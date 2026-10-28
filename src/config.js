@@ -229,6 +229,14 @@ export function loadConfig({ argv = [], env = process.env } = {}) {
       maxResults: integer(env, 'SEARCH_MAX_RESULTS', 5, { min: 1, max: 10 }),
       timeoutMs: integer(env, 'SEARCH_TIMEOUT_MS', 15_000, { min: 1_000, max: 60_000 }),
     },
+    food: {
+      enabled: boolean(env, 'FOOD_ENABLED', true),
+      apiKey: text(env, 'AMAP_API_KEY'),
+      radius: integer(env, 'FOOD_RADIUS_METERS', 3000, { min: 300, max: 10_000 }),
+      maxResults: integer(env, 'FOOD_MAX_RESULTS', 3, { min: 1, max: 5 }),
+      timeoutMs: integer(env, 'FOOD_TIMEOUT_MS', 12_000, { min: 1000, max: 30_000 }),
+      sessionTtlMs: integer(env, 'FOOD_SESSION_TTL_MINUTES', 10, { min: 1, max: 60 }) * 60_000,
+    },
     proactive: {
       enabled: boolean(env, 'PROACTIVE_ENABLED', false),
       groups: parseIdSet(text(env, 'PROACTIVE_GROUPS')),
@@ -239,7 +247,8 @@ export function loadConfig({ argv = [], env = process.env } = {}) {
       minChars: integer(env, 'PROACTIVE_MIN_CHARS', 4, { min: 1, max: 100 }),
       maxChars: integer(env, 'PROACTIVE_MAX_CHARS', 160, { min: 20, max: 500 }),
       quietHours: text(env, 'PROACTIVE_QUIET_HOURS', '1-7'),
-      retryOnSkip: boolean(env, 'PROACTIVE_RETRY_ON_SKIP', true),
+      followUpWindowMs: integer(env, 'PROACTIVE_FOLLOWUP_WINDOW_SEC', 120, { min: 10, max: 3600 }) * 1000,
+      followUpCooldownMs: integer(env, 'PROACTIVE_FOLLOWUP_COOLDOWN_SEC', 3, { min: 0, max: 60 }) * 1000,
     },
     family: {
       fatherQq: text(env, 'FAMILY_FATHER_QQ'),

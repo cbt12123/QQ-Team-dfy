@@ -330,7 +330,7 @@ test('ChatEngine prepares images and uses the vision model', async () => {
   assert.deepEqual(captured.images, ['data:image/jpeg;base64,AAAA']);
 });
 
-test('ChatEngine.proactiveReply retries once when the model skips', async () => {
+test('ChatEngine.proactiveReply respects silence even with the legacy retry flag', async () => {
   const responses = ['<SKIP>', '确实，这个话题有点意思'];
   const llm = {
     enabled: true,
@@ -345,8 +345,9 @@ test('ChatEngine.proactiveReply retries once when the model skips', async () => 
 
   assert.equal(
     await engine.proactiveReply({ context: '群聊内容', triggerText: '你们怎么看' }),
-    '确实，这个话题有点意思',
+    null,
   );
+  assert.equal(responses.length, 1);
 });
 
 test('ChatEngine /reset only clears the current user memory', async () => {

@@ -9,6 +9,7 @@ import { ChatEngine } from './chat/engine.js';
 import { ProactivePolicy } from './chat/proactive.js';
 import { WebSearch } from './search/web-search.js';
 import { WeatherService } from './weather/weather.js';
+import { FoodService } from './food/food-service.js';
 import { ImageService } from './images/image-service.js';
 import { ImageGenerator } from './images/image-generator.js';
 import { VoiceService } from './voice/voice.js';
@@ -36,6 +37,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
   const llm = new LlmClient(config.llm, { logger });
   const search = new WebSearch({ ...config.search, logger });
   const weather = new WeatherService({ ...config.weather, logger });
+  const food = new FoodService({ ...config.food, llm, logger });
   const vision = new ImageService({ ...config.vision, logger });
   const imageGenerator = new ImageGenerator({ ...config.imageGen, logger });
   const voice = new VoiceService({ ...config.voice, logger });
@@ -50,6 +52,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
     weather,
     vision,
     imageGenerator,
+    food,
   });
   let adapter;
   let proactive = null;
@@ -63,7 +66,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
     }
 
     if (event.mentioned) proactive?.cancel(event.groupId);
-    else proactive?.consider(event);
+    else if (config.replyEnabled) proactive?.consider(event);
   };
 
   const onMessage = async (message) => {
@@ -219,7 +222,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
       }
     }
 
-    if (!answer.imageUrl && useVoice) {
+    if (!answer.imageUrl && useVoice && !answer.forceText) {
       if (typeof message.replyVoice !== 'function') {
         answer.text = `${answer.text}\n（当前接入方式不支持发送语音）`;
       } else {
@@ -297,6 +300,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
       ...config.napcat,
       onMessage,
       onGroupMessage,
+      onBotReply: ({ groupId, userId }) => proactive?.noteReply(groupId, userId),
       logger,
       dryRun: config.dryRun,
       replyMaxChars: config.replyMaxChars,
@@ -318,7 +322,8 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
       send: async ({ groupId, text }) => {
         await adapter.sendGroupText(groupId, text);
       },
-      onBotMessage: ({ groupId, text }) => {
+      onBotMessage: ({ groupId, userId, triggerText, text }) => {
+        memory.append(`napcat:${groupId}:${userId}`, triggerText, text);
         groupContext.record({
           platform: 'napcat',
           groupId,
@@ -341,6 +346,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
     llm,
     search,
     weather,
+    food,
     vision,
     imageGenerator,
     voice,
@@ -356,6 +362,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
       proactive?.close();
       await adapter.stop();
       memory.close();
+      food.close();
       groupContext.close();
     },
   };

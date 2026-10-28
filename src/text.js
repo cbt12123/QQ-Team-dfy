@@ -48,6 +48,7 @@ function appendAt(parts, params, selfId, state) {
     state.mentioned = true;
     return;
   }
+  state.mentionsOthers = true;
   if (qq === 'all') return;
   parts.push(`@${params.name || qq} `);
 }
@@ -96,7 +97,7 @@ function analyzeArrayMessage(message, selfId) {
     }
   }
 
-  return { parts, mentioned: state.mentioned };
+  return { parts, mentioned: state.mentioned, mentionsOthers: state.mentionsOthers };
 }
 
 /**
@@ -111,6 +112,7 @@ export function analyzeOneBotMessage(event, selfId = event?.self_id) {
     const result = analyzeArrayMessage(event.message, selfId);
     parts = result.parts;
     state.mentioned = result.mentioned;
+    state.mentionsOthers = result.mentionsOthers;
   } else {
     parts = parseCqString(event?.raw_message ?? event?.message ?? '', selfId, state);
   }
@@ -122,7 +124,7 @@ export function analyzeOneBotMessage(event, selfId = event?.self_id) {
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
-  return { mentioned: state.mentioned, text: messageText };
+  return { mentioned: state.mentioned, mentionsOthers: Boolean(state.mentionsOthers), text: messageText };
 }
 
 export function truncateText(input, maxChars) {
