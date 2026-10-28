@@ -56,6 +56,7 @@ test('runtime joins without an initial mention, continues, saves memory, and alw
   const runtime = createRuntime(config, { logger: silentLogger });
   const calls = [];
   runtime.llm.chat = async (o) => { calls.push(o); return '自然接住这句话'; };
+  runtime.vision.prepare = async (urls) => urls.map(() => 'data:image/png;base64,test');
   let id = 0;
   const send = (message, user = 20002) => peer.send(JSON.stringify({
     post_type: 'message', message_type: 'group', self_id: 10001,
@@ -73,9 +74,12 @@ test('runtime joins without an initial mention, continues, saves memory, and alw
 
     // Even a very short follow-up bypasses ordinary participation probability/cooldown.
     config.proactive.chance = 0;
-    send([text('嗯')]);
+    send([{ type: 'image', data: { url: 'https://example.com/meme.png' } }]);
+    send([text('这个呢')]);
     await until(() => runtime.memory.get(key).length === 4);
     assert.equal(calls[1].history.length, 2);
+    assert.deepEqual(calls[1].images, ['data:image/png;base64,test']);
+    assert.equal(calls[1].model, config.vision.model);
 
     send([{ type: 'at', data: { qq: '30003' } }, text('你怎么看')]);
     await wait(50);
@@ -94,6 +98,59 @@ test('runtime joins without an initial mention, continues, saves memory, and alw
   } finally {
     await runtime.stop();
     await new Promise((resolve) => server.close(resolve));
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('runtime learns an allowlisted private interest and recalls it during group participation', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'qqbot-cross-scene-'));
+  const server = new WebSocketServer({ host: '127.0.0.1', port: 0 });
+  await once(server, 'listening');
+  let peer;
+  const sends = [];
+  server.on('connection', socket => {
+    peer = socket;
+    socket.on('message', raw => {
+      const p = JSON.parse(String(raw));
+      if (!['send_group_msg', 'send_private_msg'].includes(p.action)) return;
+      sends.push(p);
+      socket.send(JSON.stringify({ status: 'ok', retcode: 0, echo: p.echo, data: { message_id: 5000 + sends.length } }));
+    });
+  });
+  const config = loadConfig({ env: {
+    ADAPTER: 'napcat', DATA_DIR: dir, LLM_API_KEY: 'test-only',
+    NAPCAT_WS_URL: `ws://127.0.0.1:${server.address().port}`,
+    NAPCAT_PRIVATE_ALLOWED_USERS: '20002', NAPCAT_ALLOWED_GROUPS: '123456',
+    MEMORY_SHARE_ORDINARY_PRIVATE: '1',
+    PROACTIVE_ENABLED: '1', PROACTIVE_GROUPS: '123456', PROACTIVE_CHANCE: '1',
+    PROACTIVE_DEBOUNCE_MS: '0', PROACTIVE_QUIET_HOURS: '',
+    WEATHER_ENABLED: '0', SEARCH_ENABLED: '0', VOICE_ENABLED: '0',
+  } });
+  const runtime = createRuntime(config, { logger: silentLogger });
+  const calls = [];
+  runtime.llm.chat = async o => {
+    if (o.systemPrompt?.includes('记忆整理器')) return JSON.stringify({ items: [{
+      kind: 'preference', key: '摄影', text: '我平时喜欢摄影', evidence: '我平时喜欢摄影',
+      visibility: 'ordinary', status: 'active',
+    }] });
+    calls.push(o); return o.personalMemory?.includes('摄影') ? '最近在拍什么？' : '你好';
+  };
+  try {
+    await runtime.start();
+    await until(() => runtime.adapter.ready && peer);
+    peer.send(JSON.stringify({ post_type: 'message', message_type: 'private', self_id: 10001,
+      user_id: 20002, message_id: 1, message: [{ type: 'text', data: { text: '我平时喜欢摄影' } }] }));
+    await until(() => sends.some(s => s.action === 'send_private_msg'));
+    peer.send(JSON.stringify({ post_type: 'message', message_type: 'group', self_id: 10001,
+      group_id: 123456, user_id: 20002, message_id: 2,
+      message: [{ type: 'text', data: { text: '好无聊啊' } }] }));
+    await until(() => sends.some(s => s.action === 'send_group_msg'));
+    assert.match(calls.at(-1).personalMemory, /摄影/);
+    assert.match(sends.at(-1).params.message[0].data.text, /拍什么/);
+    assert.doesNotMatch(runtime.groupContext.render('napcat', '123456'), /我平时喜欢摄影/);
+  } finally {
+    await runtime.stop();
+    await new Promise(resolve => server.close(resolve));
     rmSync(dir, { recursive: true, force: true });
   }
 });

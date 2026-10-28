@@ -19,6 +19,8 @@ function helpText(botName) {
     '可用命令：',
     '/help  查看这条帮助',
     '/reset 清空我们之间的对话记忆',
+    '/memory 查看在当前场景可使用的长期记忆',
+    '/forget 关键词  删除相关长期记忆；/forget all 删除全部长期记忆',
     '/ping  检查我是否在线',
     '/id    查看当前群和用户 ID（配置白名单时有用）',
   ].join('\n');
@@ -30,11 +32,12 @@ export class ChatEngine {
 
   constructor(
     config,
-    { logger, llm, memory, search, weather, vision, imageGenerator, food, now = () => Date.now() } = {},
+    { logger, llm, memory, personalMemory, search, weather, vision, imageGenerator, food, now = () => Date.now() } = {},
   ) {
     this.config = config;
     this.logger = logger;
     this.llm = llm;
+    this.personalMemory = personalMemory;
     this.search = search;
     this.weather = weather;
     this.vision = vision;
@@ -69,11 +72,15 @@ export class ChatEngine {
    * Decide whether to join an ongoing group conversation without being @'d.
    * Returns null when the model chooses silence.
    */
-  async proactiveReply({ context = '', triggerText = '', userId = '', groupId = '', followUp = false } = {}) {
+  async proactiveReply({ context = '', triggerText = '', userId = '', groupId = '', followUp = false, images: imageUrls = [] } = {}) {
     if (!this.llm?.enabled) return null;
-    const food = await this.food?.handle({ text: triggerText, sessionKey: `napcat:${groupId}:${userId}` });
+    const images = imageUrls.length && this.vision?.enabled ? await this.vision.prepare(imageUrls) : [];
+    if (imageUrls.length && !images.length) return null;
+    const food = !images.length && await this.food?.handle({ text: triggerText, sessionKey: `napcat:${groupId}:${userId}` });
     if (food?.text) return food.text;
     const relationship = this.#relationshipFor(userId);
+    const personalMemory = await this.personalMemory?.recall({ platform: 'napcat', groupId, userId,
+      text: triggerText }, { proactive: true });
     const weatherData = this.weather?.shouldFetch(triggerText)
       ? (await this.weather.get()) || '[天气数据暂时获取失败]'
       : '';
@@ -99,6 +106,9 @@ export class ChatEngine {
         context,
         relationship,
         weather: weatherData,
+        personalMemory,
+        images,
+        model: images.length ? this.config.vision?.model : undefined,
       });
     } catch (error) {
       this.logger?.warn('主动接话判断失败', { error });
@@ -264,13 +274,27 @@ export class ChatEngine {
       if (command === '/help' || command === '/帮助') {
         return { text: helpText(this.config.botName), command: 'help' };
       }
+      if (command === '/memory' || command === '/记忆') {
+        if (!this.personalMemory?.enabled) return { text: '长期记忆功能当前没有开启。', command: 'memory' };
+        const items = await this.personalMemory.list(message);
+        return { text: items.length ? ['在当前场景能使用的你的长期记忆：',
+          ...items.map(i => `· ${i.key}：${i.text}（${i.visibility === 'shared' ? '可跨场景' : i.visibility === 'private' ? '仅本人私聊' : '原群及本人私聊'}${i.status === 'resolved' ? '，已结束' : ''}）`),
+          '私聊可查看你的完整记忆。/forget 关键词 可删除，/forget all 删除你的全部长期记忆。'].join('\n')
+          : '暂时没有整理出可在这里使用的长期记忆。', command: 'memory', forceText: true };
+      }
+      if (command === '/forget' || command === '/忘记') {
+        const query = text.slice(text.indexOf(' ') + 1).trim();
+        if (!query || query === text) return { text: '用 /forget 关键词 删除相关长期记忆，或 /forget all 删除你的全部长期记忆。', command: 'forget' };
+        const count = this.personalMemory?.forget(message, /^(all|全部)$/i.test(query) ? '' : query) || 0;
+        return { text: `已删除 ${count} 条你的长期记忆。当前聊天原文可用 /reset 清空。`, command: 'forget', forceText: true };
+      }
       if (command === '/reset' || command === '/重置' || command === '/清空') {
         const cleared = this.memory.clear(sessionKey);
         this.food?.clear(sessionKey);
         return {
           text: cleared
-            ? '已清空我们之间的对话记忆。群聊旁听记录还会按时间自动过期。'
-            : '本来就没有对话记忆，直接问我吧。',
+            ? '已清空当前聊天的短期对话。长期记忆可用 /forget all 删除；群聊旁听记录按时间过期。'
+            : '当前聊天没有短期对话记录。长期记忆可用 /forget all 删除。',
           command: 'reset',
         };
       }
@@ -335,6 +359,11 @@ export class ChatEngine {
       return { text: '这张商家列表图没读成功，重发一张清晰截图，或把店名和价格发给我，我再帮你挑。',
         command: 'food-image-error', forceText: true };
     }
+    if (message.images?.length && !images.length) {
+      return { text: this.vision?.enabled
+        ? '收到图片了，但图片下载失败，暂时没法看清。请重发图片再试一下。'
+        : '收到图片了，但看图功能还没有开启。', command: 'image-error', forceText: true };
+    }
 
     const groupContext = String(message.groupContext ?? '').trim();
     let searchResults = '';
@@ -352,6 +381,7 @@ export class ChatEngine {
     }
 
     const relationship = this.#relationshipFor(message.userId);
+    const personalMemory = await this.personalMemory?.recall(message);
     let answer;
     try {
       answer = await this.llm.chat({
@@ -361,6 +391,7 @@ export class ChatEngine {
         searchResults,
         weather: weatherData,
         relationship,
+        personalMemory,
         images,
         voice: Boolean(message.voiceExpected),
         model: images.length ? this.config.vision?.model : undefined,
@@ -400,6 +431,7 @@ export class ChatEngine {
     const maxTotal = this.config.replyMaxChars * this.config.replyMaxParts;
     answer = truncateText(answer, maxTotal);
     this.memory.append(sessionKey, text, answer);
+    this.personalMemory?.noteDiscussed(message, answer);
 
     this.logger?.info('chat reply', {
       platform: message.platform,

@@ -8,6 +8,59 @@ import { silentLogger } from '../src/logger.js';
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+test('NapCatAdapter resolves separate and quoted images without mixing users or groups', async () => {
+  const server = new WebSocketServer({ host: '127.0.0.1', port: 0 });
+  await once(server, 'listening');
+  let socket;
+  let now = 1000;
+  const observed = [];
+  const received = [];
+  server.on('connection', (connection) => {
+    socket = connection;
+    socket.on('message', (raw) => {
+      const p = JSON.parse(String(raw));
+      if (p.action === 'get_msg') socket.send(JSON.stringify({
+        status: 'ok', retcode: 0, echo: p.echo,
+        data: { group_id: p.params.message_id === 'foreign' ? 'g2' : 'g1',
+          message: [{ type: 'image', data: { url: 'https://example.com/quoted.png' } }] },
+      }));
+    });
+  });
+  const adapter = new NapCatAdapter({
+    wsUrl: `ws://127.0.0.1:${server.address().port}`, logger: silentLogger,
+    now: () => now, forwardEnabled: false,
+    onMessage: (m) => received.push(m), onGroupMessage: (m) => observed.push(m),
+  });
+  let id = 0;
+  const send = async (segments, { group = 'g1', user = 'u1', mention = true } = {}) => {
+    const messageId = String(++id);
+    socket.send(JSON.stringify({ post_type: 'message', message_type: 'group',
+      self_id: 10001, group_id: group, user_id: user, message_id: messageId,
+      message: [...(mention ? [{ type: 'at', data: { qq: '10001' } }] : []), ...segments],
+    }));
+    return waitFor(() => (mention ? received : observed).find(m => m.messageId === messageId));
+  };
+  const text = (value) => [{ type: 'text', data: { text: value } }];
+  try {
+    adapter.start();
+    await waitFor(() => socket);
+    await send([{ type: 'image', data: { url: 'https://example.com/recent.png' } }], { mention: false });
+    assert.deepEqual((await send(text('这个学一下'))).images, ['https://example.com/recent.png']);
+    assert.deepEqual((await send(text('这个呢'), { mention: false })).images, ['https://example.com/recent.png']);
+    assert.deepEqual((await send(text('这个呢'), { user: 'u2' })).images, []);
+    assert.deepEqual((await send(text('这个呢'), { group: 'g2' })).images, []);
+    assert.deepEqual((await send(text('今天吃什么'))).images, []);
+    assert.deepEqual((await send([{ type: 'reply', data: { id: 'quoted' } }, ...text('看看')])).images,
+      ['https://example.com/quoted.png']);
+    assert.deepEqual((await send([{ type: 'reply', data: { id: 'foreign' } }, ...text('这个呢')])).images, []);
+    now += 120001;
+    assert.deepEqual((await send(text('这个呢'))).images, []);
+  } finally {
+    await adapter.stop();
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
 async function waitFor(predicate, timeoutMs = 3000) {
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {

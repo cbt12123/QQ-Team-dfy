@@ -217,6 +217,11 @@ export function loadConfig({ argv = [], env = process.env } = {}) {
     maxHistoryTurns: integer(env, 'MAX_HISTORY_TURNS', 8, { min: 0, max: 50 }),
     historyTtlMs: integer(env, 'HISTORY_TTL_MINUTES', 120, { min: 1, max: 10080 }) * 60_000,
     dataDir,
+    personalMemory: {
+      enabled: boolean(env, 'MEMORY_ENABLED', true),
+      shareOrdinaryPrivate: boolean(env, 'MEMORY_SHARE_ORDINARY_PRIVATE', false),
+      maxPerUser: integer(env, 'MEMORY_MAX_ITEMS_PER_USER', 32, { min: 4, max: 100 }),
+    },
     groupContext: {
       maxMessages: integer(env, 'GROUP_CONTEXT_MAX_MESSAGES', 80, { min: 5, max: 500 }),
       maxChars: integer(env, 'GROUP_CONTEXT_MAX_CHARS', 12_000, { min: 500, max: 30_000 }),

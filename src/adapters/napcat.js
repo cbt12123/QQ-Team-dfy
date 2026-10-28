@@ -22,6 +22,8 @@ export class NapCatAdapter {
   #forwardCache = new Map();
   #recentForwards = new Map();
   #sentGroups = new Map();
+  #recentImages = new Map();
+  #quotedMessages = new Map();
 
   constructor({
     wsUrl = 'ws://127.0.0.1:3001',
@@ -40,6 +42,7 @@ export class NapCatAdapter {
     reconnectBaseMs = 1000,
     reconnectMaxMs = 30_000,
     random = Math.random,
+    now = () => Date.now(),
     apiTimeoutMs = 15_000,
     forwardMaxMessages = 60,
     forwardMaxChars = 6000,
@@ -62,6 +65,7 @@ export class NapCatAdapter {
     this.reconnectBaseMs = reconnectBaseMs;
     this.reconnectMaxMs = reconnectMaxMs;
     this.random = random;
+    this.now = now;
     this.apiTimeoutMs = apiTimeoutMs;
     this.forwardMaxMessages = forwardMaxMessages;
     this.forwardMaxChars = forwardMaxChars;
@@ -191,7 +195,7 @@ export class NapCatAdapter {
       text = await this.#expandForwards(event, text);
     }
 
-    const images = collectImageUrls(event.message ?? event.raw_message);
+    const images = await this.#resolveImages(event, info.text);
     const userName = String(event.sender?.card || event.sender?.nickname || '');
     const message = {
       platform: 'napcat-private',
@@ -249,6 +253,7 @@ export class NapCatAdapter {
     }
 
     const info = analyzeOneBotMessage(event, selfId);
+    const images = await this.#resolveImages(event, info.text);
     const messageForwardIds = collectForwardIds(event.message ?? event.raw_message);
     if (messageForwardIds.length) {
       this.#rememberForwards(groupId, userId, messageForwardIds);
@@ -276,6 +281,7 @@ export class NapCatAdapter {
         mentioned: info.mentioned,
         directedToOthers: info.mentionsOthers || (replyIds.length > 0 && !replyToBot),
         replyToBot,
+        images,
       });
     } catch (error) {
       this.logger?.warn('记录群聊上下文失败', { groupId, error });
@@ -293,7 +299,6 @@ export class NapCatAdapter {
     let text = this.forwardEnabled
       ? await this.#expandForwards(event, info.text)
       : info.text;
-    const images = collectImageUrls(event.message ?? event.raw_message);
 
     const message = {
       platform: 'napcat',
@@ -328,6 +333,57 @@ export class NapCatAdapter {
     Promise.resolve(this.onMessage(message)).catch((error) => {
       this.logger?.error('处理群 @ 消息失败', { groupId, userId, error });
     });
+  }
+
+  async #resolveImages(event, text) {
+    const scope = event.message_type === 'private' ? `private:${event.user_id}` : `group:${event.group_id}`;
+    const key = `${scope}:${event.user_id}`;
+    const now = this.now();
+    for (const [id, entry] of this.#recentImages) {
+      if (entry.expiresAt <= now) this.#recentImages.delete(id);
+    }
+    const current = collectImageUrls(event.message ?? event.raw_message);
+    if (current.length) {
+      this.#recentImages.delete(key);
+      this.#recentImages.set(key, { images: current, expiresAt: now + 120_000 });
+      if (this.#recentImages.size > 200) this.#recentImages.delete(this.#recentImages.keys().next().value);
+      return current;
+    }
+    const replyIds = collectReplyIds(event.message ?? event.raw_message);
+    if (replyIds.length) {
+      const images = [];
+      for (const id of replyIds.slice(0, 3)) {
+        // Ordinary replies to our own text need no remote image lookup.
+        if (this.#sentGroups.get(id) === String(event.group_id) &&
+            !/图|表情|这(?:个|张)|那(?:个|张)/.test(text)) continue;
+        try {
+          const original = await this.#getQuotedMessage(id);
+          const sameScope = event.message_type === 'private'
+            ? !original.group_id && String(original.user_id ?? original.sender?.user_id) === String(event.user_id)
+            : String(original.group_id) === String(event.group_id);
+          if (sameScope) images.push(...collectImageUrls(original.message));
+        } catch (error) {
+          this.logger?.warn('读取引用图片失败', { error });
+        }
+      }
+      // An explicit quote always takes precedence over a recent unrelated image.
+      return [...new Set(images)].slice(0, 3);
+    }
+    if (/(?:这|那)(?:个|张|幅|些|图)|图里|图中|图片|截图|表情包/.test(text)) {
+      return this.#recentImages.get(key)?.images ?? [];
+    }
+    return [];
+  }
+
+  async #getQuotedMessage(id) {
+    const key = String(id);
+    const cached = this.#quotedMessages.get(key);
+    if (cached && cached.expiresAt > Date.now()) return cached.promise;
+    const promise = this.#callApi('get_msg', { message_id: id });
+    this.#quotedMessages.set(key, { promise, expiresAt: Date.now() + 10_000 });
+    if (this.#quotedMessages.size > 100) this.#quotedMessages.delete(this.#quotedMessages.keys().next().value);
+    try { return await promise; }
+    catch (error) { this.#quotedMessages.delete(key); throw error; }
   }
 
   /**
@@ -514,7 +570,7 @@ export class NapCatAdapter {
     if (cached && Date.now() < cached.expiresAt) return cached.text;
 
     try {
-      const data = await this.#callApi('get_msg', { message_id: replyId });
+      const data = await this.#getQuotedMessage(replyId);
       const ids = collectForwardIds(data?.message ?? data?.raw_message);
       if (!ids.length) return '';
 

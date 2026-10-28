@@ -15,6 +15,30 @@ function config(overrides = {}) {
   };
 }
 
+test('image download failures do not silently become text-only LLM replies', async () => {
+  let calls = 0;
+  const engine = new ChatEngine(config(), {
+    llm: { enabled: true, chat: async () => { calls++; return '看到了'; } },
+    vision: { enabled: true, prepare: async () => [] }, logger: silentLogger,
+  });
+  const result = await engine.reply({ platform: 'napcat', groupId: 'g1', userId: 'u1',
+    text: '这个呢', images: ['https://example.com/fail.png'] });
+  assert.equal(result.command, 'image-error');
+  assert.equal(calls, 0);
+});
+
+test('unmentioned follow-ups prepare images and select the vision model', async () => {
+  let call;
+  const engine = new ChatEngine(config({ vision: { model: 'vision-test' } }), {
+    llm: { enabled: true, chat: async (options) => { call = options; return '图里是一只猫'; } },
+    vision: { enabled: true, prepare: async () => ['data:image/png;base64,test'] }, logger: silentLogger,
+  });
+  assert.equal(await engine.proactiveReply({ triggerText: '这个呢', groupId: 'g1', userId: 'u1',
+    followUp: true, images: ['https://example.com/cat.png'] }), '图里是一只猫');
+  assert.equal(call.model, 'vision-test');
+  assert.deepEqual(call.images, ['data:image/png;base64,test']);
+});
+
 test('ChatEngine passes group context to the LLM', async () => {
   const calls = [];
   const llm = {

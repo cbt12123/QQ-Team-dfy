@@ -4,6 +4,7 @@ import { loadConfig } from './config.js';
 import { createLogger } from './logger.js';
 import { ConversationStore } from './chat/memory.js';
 import { GroupContextStore } from './chat/group-context.js';
+import { PersonalMemory } from './chat/personal-memory.js';
 import { LlmClient } from './chat/llm.js';
 import { ChatEngine } from './chat/engine.js';
 import { ProactivePolicy } from './chat/proactive.js';
@@ -35,6 +36,8 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
     filePath: join(dataDir, 'group-context.json'),
   });
   const llm = new LlmClient(config.llm, { logger });
+  const personalMemory = new PersonalMemory({ ...config.personalMemory, llm, logger,
+    filePath: join(dataDir, 'personal-memory.json') });
   const search = new WebSearch({ ...config.search, logger });
   const weather = new WeatherService({ ...config.weather, logger });
   const food = new FoodService({ ...config.food, llm, logger });
@@ -48,6 +51,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
     logger,
     llm,
     memory,
+    personalMemory,
     search,
     weather,
     vision,
@@ -58,6 +62,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
   let proactive = null;
 
   const onGroupMessage = (event) => {
+    void personalMemory.observe(event);
     try {
       groupContext.record(event);
     } catch (error) {
@@ -78,6 +83,8 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
       });
       return;
     }
+    // Group messages are observed by onGroupMessage; private/official events arrive here.
+    if (message.platform !== 'napcat') void personalMemory.observe(message);
     const voiceKey = `${message.platform}:${message.groupId}:${message.userId}`;
     const voiceCommand = parseVoiceCommand(message.text);
     if (voiceCommand) {
@@ -324,6 +331,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
       },
       onBotMessage: ({ groupId, userId, triggerText, text }) => {
         memory.append(`napcat:${groupId}:${userId}`, triggerText, text);
+        personalMemory.noteDiscussed({ platform: 'napcat', groupId, userId }, text);
         groupContext.record({
           platform: 'napcat',
           groupId,
@@ -342,6 +350,7 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
     config,
     logger,
     memory,
+    personalMemory,
     groupContext,
     llm,
     search,
@@ -357,11 +366,13 @@ export function createRuntime(config, { logger = createLogger(config.logLevel) }
     proactive,
     async start() {
       await adapter.start();
+      void personalMemory.importRecentPrivate(join(dataDir, 'conversations.json'));
     },
     async stop() {
       proactive?.close();
       await adapter.stop();
       memory.close();
+      personalMemory.close();
       food.close();
       groupContext.close();
     },

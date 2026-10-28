@@ -153,6 +153,7 @@ export class ProactivePolicy {
         userId: event.userId,
         groupId,
         followUp: event.followUp,
+        images: event.images,
       });
     } catch (error) {
       this.logger?.warn('主动接话生成失败', { groupId, error });
