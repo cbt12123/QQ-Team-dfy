@@ -1,0 +1,42 @@
+config_version=5
+
+[application]
+config/name="大肥鱼的小房间"
+config/use_custom_user_dir=true
+config/custom_user_dir_name="DafeyuPet"
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[display]
+window/size/viewport_width=540
+window/size/viewport_height=960
+window/size/window_width_override=540
+window/size/window_height_override=960
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=1
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/default_filters/use_nearest_mipmap_filter=false
+textures/vram_compression/import_etc2_astc=true
+environment/defaults/default_clear_color=Color(0.969, 0.977, 0.957, 1)
+
+[importer_defaults]
+texture={
+"compress/mode": 1,
+"compress/lossy_quality": 0.85,
+"mipmaps/generate": false
+}
+
+[input_devices]
+pointing/emulate_touch_from_mouse=false
+pointing/emulate_mouse_from_touch=false
+
+[audio]
+driver/enable_input=false
+
+[network]
+limits/http_client/max_response_size=8388608

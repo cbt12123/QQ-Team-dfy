@@ -1,0 +1,72 @@
+[
+  {
+    "key": "idle",
+    "label": "待机呼吸休闲",
+    "file": "fd64a428a2be1d3b4ff6.webm",
+    "source_sha": "fd64a428a2be1d3b4ff6cd7f9867dfe978ba0bbb",
+    "loop": true
+  },
+  {
+    "key": "wave",
+    "label": "点击回应-元气挥手",
+    "file": "f60556f06c386cfb569f.webm",
+    "source_sha": "f60556f06c386cfb569f76b0cfa2e34e34fdc362",
+    "loop": false
+  },
+  {
+    "key": "touch",
+    "label": "点击回应-挠痒咯咯笑",
+    "file": "d896eb9a91ca8eafa7f0.webm",
+    "source_sha": "d896eb9a91ca8eafa7f0af35a3073dc04a397742",
+    "loop": false
+  },
+  {
+    "key": "feed",
+    "label": "吃白饭",
+    "file": "0f400023c2f036e6edc2.webm",
+    "source_sha": "0f400023c2f036e6edc28033083d49f68686d347",
+    "loop": false
+  },
+  {
+    "key": "stretch",
+    "label": "超大伸懒腰",
+    "file": "689e04f120f9f678a942.webm",
+    "source_sha": "689e04f120f9f678a9424dac6cadf4b6a0bd6e6b",
+    "loop": false
+  },
+  {
+    "key": "bubbles",
+    "label": "鲸鱼吐泡泡特效",
+    "file": "4848e28f2c4fde323025.webm",
+    "source_sha": "4848e28f2c4fde323025a03a7980b75f1c56f98e",
+    "loop": false
+  },
+  {
+    "key": "drag",
+    "label": "被鼠标拖拽悬空反馈",
+    "file": "728f04b2997aa9ec4bdb.webm",
+    "source_sha": "728f04b2997aa9ec4bdb87d1b9b14d7910bc7fd6",
+    "loop": false
+  },
+  {
+    "key": "sleep_start",
+    "label": "睡觉-开始",
+    "file": "cd3c9e42d140354a69c7.webm",
+    "source_sha": "cd3c9e42d140354a69c7ae9e2a42edafdf5c983a",
+    "loop": false
+  },
+  {
+    "key": "sleep_loop",
+    "label": "睡觉-循环",
+    "file": "e91b946423a17ba81f3d.webm",
+    "source_sha": "e91b946423a17ba81f3d27727c8e9c6b4ec52ae0",
+    "loop": true
+  },
+  {
+    "key": "sleep_end",
+    "label": "睡觉-起来",
+    "file": "dcea582e52937f6c3b10.webm",
+    "source_sha": "dcea582e52937f6c3b10e2a331ff5a4a4b4d46cb",
+    "loop": false
+  }
+]
