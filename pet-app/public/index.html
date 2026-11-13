@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#eaf3ed"><meta name="description" content="和大肥鱼见面，聊聊天，陪她玩一会儿。">
+  <title>大肥鱼 · 今天也在这里</title>
+  <link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icon.svg"><link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="/"><img src="/icon.svg" width="36" height="36" alt=""><span>大肥鱼<span class="brand-sub">a little company</span></span></a><div class="top-actions"><span id="account-label"></span><button id="install" class="quiet" hidden>添加到桌面</button><button id="logout" class="quiet" hidden>退出</button></div></header>
+  <main>
+    <section class="intro"><div><p class="eyebrow">YOUR LITTLE CORNER OF THE OCEAN</p><h1>今天，也陪你待一会儿。</h1><p class="intro-copy">说说今天的小事，或者，什么都不说。</p></div><span class="private-note">◌ 每个人都有自己的小世界</span></section>
+    <div class="workspace">
+      <section class="pet-panel" aria-label="大肥鱼互动区">
+        <div class="stage-top"><span class="live-dot"></span><span id="pet-status" role="status">准备见面</span><span class="stage-tag">大肥鱼的房间</span></div>
+        <div class="pet-stage" id="pet-stage"><div class="bubble" id="bubble">你好呀，欢迎来到我的小房间。</div><button id="pet-touch" class="pet-touch" aria-label="摸摸大肥鱼"><video id="pet-video" muted playsinline preload="metadata" aria-label="大肥鱼动画"></video><span id="pet-fallback" hidden>🐳<span>这个浏览器暂时无法播放透明动画，聊天仍可使用。</span></span></button><div class="water-ring"></div><div class="stage-caption">轻轻点一下，和她打个招呼</div></div>
+        <div class="pet-tools"><button data-quick="挥手">👋 打招呼</button><button data-quick="吃白饭">🍚 开饭啦</button><button data-quick="伸懒腰">☁ 伸懒腰</button><button data-quick="泡泡">◌ 吐泡泡</button><button id="sleep">☾ 睡一会儿</button><button id="open-actions">✧ 更多动作</button></div>
+        <section id="action-library" class="action-library" hidden><div class="section-heading"><h2>今天想做什么？</h2><button id="close-actions" class="quiet">收起</button></div><label class="sr-only" for="action-search">搜索动作</label><input id="action-search" type="search" placeholder="找找吃饭、玩耍、跳舞…"><div id="action-list" class="action-list"></div></section>
+        <p class="asset-credit">非商业同人互动项目 · <a href="/licenses.html">角色、动画与许可</a></p>
+      </section>
+      <section class="conversation-panel">
+        <div id="auth-view"><p class="eyebrow">A SPACE JUST FOR YOU</p><h2 id="auth-title">来，坐一会儿。</h2><p class="muted">登录后，我会记得属于你的故事。</p><div class="auth-tabs"><button id="login-tab" class="selected">登录</button><button id="register-tab">受邀加入</button></div>
+          <form id="auth-form"><label id="invite-label" hidden>邀请口令<input id="invite" autocomplete="off" maxlength="100"></label><label>用户名<input id="username" autocomplete="username" minlength="3" maxlength="32" pattern="[a-zA-Z0-9_-]{3,32}" placeholder="英文、数字或下划线" required></label><label id="display-label" hidden>怎么称呼你<input id="display-name" maxlength="32" autocomplete="nickname" placeholder="你的昵称"></label><label>密码<input id="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" placeholder="至少12位" required></label><button class="primary" id="auth-submit">进入小房间 →</button><p class="form-error" id="auth-error" role="alert"></p></form>
+          <p class="privacy-copy">聊天与录音由云端服务处理，必要内容会发送给所配置的模型及语音服务商。账号记录分别保存；服务器运维可能接触数据，并非端到端加密。<a href="/licenses.html#privacy">了解数据处理</a></p>
+        </div>
+        <div id="chat-view" hidden><div class="section-heading"><div><p class="eyebrow">JUST YOU & ME</p><h2>聊点什么吧</h2></div><button id="open-memory" class="quiet">♡ 我的记忆</button></div><p id="capability-note" class="notice" hidden></p><div id="messages" class="messages" role="log" aria-label="聊天记录" aria-live="polite"></div><p id="chat-error" class="form-error" role="alert"></p>
+          <form id="chat-form"><label class="sr-only" for="message-input">发送消息</label><textarea id="message-input" maxlength="4000" rows="2" placeholder="今天发生了什么？" required></textarea><div class="composer-tools"><button type="button" id="record" class="quiet">🎙 按住说话</button><button type="button" id="stop-audio" class="quiet" hidden>停止播放</button><button type="submit" class="primary" id="send">发送 ↗</button></div><p class="muted small" id="record-note">语音需要麦克风授权；文字随时都可以聊。</p></form>
+        </div>
+      </section>
+    </div>
+    <section id="memory-panel" class="memory-panel" hidden><div class="section-heading"><div><p class="eyebrow">THINGS THAT MATTER TO YOU</p><h2>属于你的记忆</h2></div><button id="close-memory" class="quiet">关闭</button></div><p class="muted">首版由你明确添加记忆，不会偷偷提取私人资料。删除记忆时也会清除对话上下文，避免从旧聊天再次记起。</p><form id="memory-form"><label for="memory-input">希望大肥鱼记住什么？</label><div class="inline-form"><input id="memory-input" maxlength="500" required placeholder="比如：我喜欢蓝莓，不喜欢香菜"><button class="primary">记住它</button></div></form><ul id="memories"></ul><div class="data-tools"><button id="export-data" class="quiet">导出我的数据</button><button id="clear-history" class="quiet">清空聊天</button><button id="clear-memory" class="danger">忘记全部记忆和聊天</button></div><p id="memory-error" role="alert" class="form-error"></p></section>
+    <section id="admin-panel" class="admin-panel" hidden><h2>邀请一个朋友</h2><p class="muted">一次性链接，24小时内有效。把它私下发给家人朋友。</p><button id="create-invite" class="quiet">生成邀请链接</button><label class="sr-only" for="invite-output">邀请链接</label><input id="invite-output" readonly hidden><p id="invite-error" role="alert" class="form-error"></p></section>
+  </main>
+  <footer><span>慢慢来，我在这里。</span><span>大肥鱼 · 非 DeepSeek 官方产品 · <a href="/licenses.html">致谢与许可</a></span></footer>
+  <div id="network-note" class="network-note" role="status" hidden>网络暂时断开，已缓存的动作仍可玩；聊天恢复联网后再试。</div>
+</body>
+</html>

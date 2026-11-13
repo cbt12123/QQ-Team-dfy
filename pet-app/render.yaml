@@ -1,0 +1,24 @@
+# 仅为正式部署草案：含付费实例和持久磁盘，未经套餐/预算确认不得应用。
+services:
+  - type: web
+    name: dafeyu-pwa
+    runtime: docker
+    plan: starter
+    region: singapore
+    dockerfilePath: ./pet-app/Dockerfile
+    dockerContext: .
+    autoDeployTrigger: off
+    healthCheckPath: /health
+    disk:
+      name: dafeyu-data
+      mountPath: /var/lib/dafeyu
+      sizeGB: 1
+    envVars:
+      - key: PET_PUBLIC_URL
+        sync: false
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_BASE_URL
+        value: https://api.deepseek.com/v1
+      - key: LLM_MODEL
+        value: deepseek-chat
