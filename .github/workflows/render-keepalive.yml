@@ -1,0 +1,18 @@
+name: Render health keepalive
+
+on:
+  schedule:
+    - cron: '3,13,23,33,43,53 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Request public health endpoint without calling the model
+        env:
+          HEALTH_URL: https://qqbot-public-web-test.onrender.com/health
+        run: curl --fail --silent --show-error --max-time 45 --retry 1 --retry-all-errors --retry-delay 5 "$HEALTH_URL"
