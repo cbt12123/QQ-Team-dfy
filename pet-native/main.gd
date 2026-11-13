@@ -3,6 +3,7 @@ extends Control
 const StateSource = preload("res://pet_state.gd")
 const ApiSource = preload("res://api_client.gd")
 const StageSource = preload("res://room_stage.gd")
+const UpdateSource = preload("res://app_updater.gd")
 
 var state = StateSource.new()
 var api = ApiSource.new()
@@ -27,7 +28,12 @@ var account_label: Label
 var server_input: LineEdit
 var username_input: LineEdit
 var password_input: LineEdit
-var invite_input: LineEdit
+var updater = UpdateSource.new()
+var update_label: Label
+var update_check_button: Button
+var update_download_button: Button
+var update_install_button: Button
+var update_cancel_button: Button
 var auth_label: Label
 var busy := false
 var content_margin: MarginContainer
@@ -35,6 +41,7 @@ var keyboard_inset := 0
 
 func _ready() -> void:
     add_child(api)
+    add_child(updater)
     var manifest: Array = JSON.parse_string(FileAccess.get_file_as_string("res://assets/actions.json"))
     for action in manifest:
         actions[str(action.key)] = action
@@ -215,7 +222,7 @@ func _build_settings(page: VBoxContainer) -> void:
     form.add_theme_constant_override("separation", 12)
     form.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     scroll.add_child(form)
-    _label(form, "填写服务器的 HTTPS 地址，使用邀请码注册或登录已有账号。", 15, "819179")
+    _label(form, "填写服务器的 HTTPS 地址，直接注册或登录已有账号。每个人的聊天和记忆独立保存。", 15, "819179")
     _label(form, "服务器地址", 15)
     server_input = _field(form, "https://你的服务器")
     form.add_child(_button("保存服务器地址", _save_server))
@@ -224,16 +231,36 @@ func _build_settings(page: VBoxContainer) -> void:
     username_input.max_length = 32
     password_input = _field(form, "密码（至少12位）", true)
     password_input.max_length = 128
-    invite_input = _field(form, "受邀注册时填写邀请口令")
-    invite_input.max_length = 100
     var row := HBoxContainer.new()
     row.add_theme_constant_override("separation", 10)
     form.add_child(row)
     row.add_child(_button("登录", func(): _authenticate(false), true))
-    row.add_child(_button("受邀注册", func(): _authenticate(true)))
+    row.add_child(_button("注册", func(): _authenticate(true)))
     form.add_child(_button("退出并清除当前页面", _logout))
     auth_label = _label(form, "无需登录即可玩动作。注册和聊天取决于所连接的服务；登录会话仅在内存保存，退出 App 后需重新登录。", 13, "819179")
     form.add_child(_button("角色、引擎与字体许可", func(): _show_page("credits")))
+    _label(form, "应用更新 · 当前 " + str(updater.version.version_name), 20)
+    update_label = _label(form, "下载后由 Android 确认安装，会保留已有应用数据。", 14)
+    update_check_button = _button("检查更新", updater.check_update)
+    form.add_child(update_check_button)
+    update_download_button = _button("下载新版", updater.download_update)
+    form.add_child(update_download_button)
+    update_install_button = _button("安装更新", updater.install_update)
+    form.add_child(update_install_button)
+    update_cancel_button = _button("取消下载", updater.cancel)
+    form.add_child(update_cancel_button)
+    updater.changed.connect(func(message: String):
+        update_label.text = message
+        _update_buttons())
+    updater.progress.connect(func(downloaded: int, total: int):
+        update_label.text = "正在下载：%.1f / %.1f MB" % [downloaded / 1048576.0, total / 1048576.0])
+    _update_buttons()
+
+func _update_buttons() -> void:
+    update_check_button.disabled = is_instance_valid(updater.request)
+    update_download_button.visible = not updater.artifact.is_empty() and updater.verified_path.is_empty() and not updater.downloading
+    update_install_button.visible = not updater.verified_path.is_empty()
+    update_cancel_button.visible = updater.downloading
 
 func _build_credits(page: VBoxContainer) -> void:
     _label(page, "让大肥鱼来到这里的人", 25)
@@ -433,7 +460,6 @@ func _clear_account() -> void:
     user = {}
     capabilities = {}
     password_input.text = ""
-    invite_input.text = ""
     chat_input.text = ""
     chat_log.text = "这里还没有故事。"
     account_label.text = "就在这里"
@@ -455,8 +481,6 @@ func _authenticate(registering: bool) -> void:
         return
     busy = true
     var body := {"username": username_input.text, "password": password_input.text}
-    if registering:
-        body.invite = invite_input.text.strip_edges()
     api.invalidate()
     _clear_account()
     var version: int = api.generation

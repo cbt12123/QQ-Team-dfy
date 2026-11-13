@@ -43,7 +43,7 @@ export class Store {
     this.db.prepare('INSERT INTO invites VALUES(?,?,?)').run(digest(value), admin ? 1 : 0, Date.now() + expiresInMs);
     return value;
   }
-  async register({ invite, username, password, displayName }) {
+  async register({ invite = "", username, password, displayName }, { allowWithoutInvite = false } = {}) {
     username = typeof username === 'string' ? username.trim().toLowerCase() : '';
     if (!/^[a-z0-9_-]{3,32}$/.test(username) || typeof password !== 'string' || password.length < 12 || password.length > 128 ||
       typeof invite !== 'string' || invite.length > 100 || (displayName !== undefined && (typeof displayName !== 'string' || !displayName.trim() || displayName.length > 32))) {
@@ -53,7 +53,7 @@ export class Store {
     const hash = `${salt}:${(await derive(password, salt, 64)).toString('hex')}`;
     this.db.exec('BEGIN IMMEDIATE');
     try {
-      const invitation = this.db.prepare('SELECT * FROM invites WHERE hash=? AND expires>?').get(digest(invite), Date.now());
+      const invitation = !invite && allowWithoutInvite ? { admin: 0 } : this.db.prepare('SELECT * FROM invites WHERE hash=? AND expires>?').get(digest(invite), Date.now());
       if (!invitation) throw failure(400, '邀请已失效或已使用');
       if (this.db.prepare('SELECT id FROM users WHERE username=?').get(username)) throw failure(409, '此用户名已被使用');
       const id = randomUUID();

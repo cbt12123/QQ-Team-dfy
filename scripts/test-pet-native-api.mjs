@@ -11,6 +11,7 @@ if (!executable) throw new Error('Usage: node scripts/test-pet-native-api.mjs <G
 const directory = mkdtempSync(join(tmpdir(), 'dafeyu-contract-'));
 const fixture = join(root, '.cache/pet-native-api-fixture.json');
 const app = createApp({
+  openRegistration: true,
   dataDir: directory,
   secureCookies: false,
   chat: { reply: async ({ text }) => {
@@ -21,7 +22,7 @@ const app = createApp({
 try {
   await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve));
   mkdirSync(join(root, '.cache'), { recursive: true });
-  writeFileSync(fixture, JSON.stringify({ base: `http://127.0.0.1:${app.server.address().port}`, invite: app.store.createInvite() }));
+  writeFileSync(fixture, JSON.stringify({ base: `http://127.0.0.1:${app.server.address().port}` }));
   const child = spawn(resolve(executable), ['--headless', '--path', join(root, 'pet-native'), '--log-file', join(root, '.cache/pet-native-api-contract.log'), '--script', 'res://api_contract_tests.gd'], { stdio: 'inherit', windowsHide: true });
   const timeout = setTimeout(() => child.kill(), 20000);
   try {

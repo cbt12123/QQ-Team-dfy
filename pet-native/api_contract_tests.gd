@@ -11,7 +11,6 @@ func _run() -> void:
     room.server_input.text = str(options.base)
     room.username_input.text = "native-contract"
     room.password_input.text = "a native fixture password 123"
-    room.invite_input.text = str(options.invite)
     await room._authenticate(true)
     assert(not room.user.is_empty(), "Native registration must use the actual HTTP contract")
     assert(not room.api.cookie.is_empty())

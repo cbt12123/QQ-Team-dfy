@@ -28,6 +28,7 @@ export/android/debug_keystore_user = "androiddebugkey"
 export/android/debug_keystore_pass = "android"
 EOF
 "$PET_GODOT" --headless --path "$PET_ROOT/pet-native" --editor --import > "$PET_ROOT/.cache/pet-native-linux-import.log" 2>&1
+"$PET_GODOT" --headless --path "$PET_ROOT/pet-native" --script res://update_tests.gd
 "$PET_GODOT" --headless --path "$PET_ROOT/pet-native" --script res://tests.gd
 "$PET_GODOT" --headless --path "$PET_ROOT/pet-native" --script res://interaction_tests.gd
 "$PET_GODOT" --headless --path "$PET_ROOT/pet-native" --script res://form_input_tests.gd
@@ -36,3 +37,5 @@ EOF
 "$PET_SDK/build-tools/35.0.0/apksigner" verify --verbose "$PET_ROOT/artifacts/dafeyu-native-arm64-debug.apk"
 "$PET_SDK/build-tools/35.0.0/zipalign" -c -P 16 4 "$PET_ROOT/artifacts/dafeyu-native-arm64-debug.apk"
 sha256sum "$PET_ROOT/artifacts/dafeyu-native-arm64-debug.apk"
+
+"$PET_SDK/build-tools/35.0.0/aapt" dump permissions "$PET_ROOT/artifacts/dafeyu-native-arm64-debug.apk" | grep -F "android.permission.REQUEST_INSTALL_PACKAGES"

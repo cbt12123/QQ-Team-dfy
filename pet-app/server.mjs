@@ -21,7 +21,7 @@ async function readBody(req, limit = 32768, binary = false) {
   catch { throw failure(400, '请求格式不正确'); }
 }
 
-export function createApp({ dataDir, store: providedStore, secureCookies = true, publicUrl, chat, asr, tts, deletionMirrorDir, downloadsDir } = {}) {
+export function createApp({ dataDir, store: providedStore, secureCookies = true, publicUrl, chat, asr, tts, deletionMirrorDir, downloadsDir, openRegistration = false } = {}) {
   const store = providedStore || new Store(dataDir, { deletionMirrorDir });
   const ready = Promise.resolve(store.recoverPending ? store.recoverPending() : store.db.prepare("UPDATE requests SET state='interrupted',error='服务已重启，请重新发送' WHERE state='pending'").run());
   ready.catch(() => {}); // Startup caller and API requests observe initialization failures.
@@ -47,9 +47,15 @@ export function createApp({ dataDir, store: providedStore, secureCookies = true,
     let path;
     try {
       path = new URL(req.url, 'http://localhost').pathname;
-      if (path === '/health') return json(res, 200, { status: 'ok', mode: 'chat', capabilities: { accounts: true, chat: Boolean(chat) } });
+      if (path === '/health') return json(res, 200, { status: 'ok', mode: 'chat', capabilities: { accounts: true, chat: Boolean(chat), openRegistration } });
+      if (path === '/api/app/version') {
+        if (req.method !== 'GET') throw failure(405, '不支持此操作');
+        const file = downloadsDir && join(downloadsDir, 'app-release.json');
+        if (!file || !existsSync(file)) throw failure(503, '更新信息暂不可用');
+        return json(res, 200, JSON.parse(readFileSync(file, 'utf8')));
+      }
       await ready;
-      if (downloadsDir && ['/downloads/dafeyu-android.apk', '/downloads/dafeyu-android.sha256'].includes(path)) {
+      if (downloadsDir && ['/downloads/dafeyu-android.apk', '/downloads/dafeyu-android-x86_64.apk', '/downloads/dafeyu-android.sha256'].includes(path)) {
         if (!['GET', 'HEAD'].includes(req.method)) throw failure(405, '不支持此操作');
         const filename = path.split('/').at(-1);
         const file = join(downloadsDir, filename);
@@ -69,7 +75,7 @@ export function createApp({ dataDir, store: providedStore, secureCookies = true,
         }
         if (path === '/api/register' && req.method === 'POST') {
           rate(`auth:${req.socket.remoteAddress}`, 20);
-          const user = await store.register(await readBody(req));
+          const user = await store.register(await readBody(req), { allowWithoutInvite: openRegistration });
           sessionCookie(res, await store.newSession(user.id));
           return json(res, 201, { user: publicUser(user) });
         }
@@ -202,7 +208,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (process.env.NODE_ENV === 'production' && ((!process.env.DATABASE_URL && !process.env.PET_DATA_DIR) || !publicUrl.startsWith('https://'))) throw new Error('生产环境必须配置持久数据存储和 HTTPS PET_PUBLIC_URL');
   if (process.env.RENDER && !process.env.DATABASE_URL) throw new Error('Render 公网账号必须配置持久数据库 DATABASE_URL');
   const store = process.env.DATABASE_URL ? await (await import('./postgres-store.mjs')).PostgresStore.open(process.env.DATABASE_URL, { schema: process.env.PET_DATABASE_SCHEMA || 'dafeyu' }) : undefined;
-  const app = createApp({ store, downloadsDir: process.env.PET_DOWNLOADS_DIR, dataDir: process.env.PET_DATA_DIR || resolve(here, '../.cache/pet-app-data'), publicUrl, secureCookies: publicUrl.startsWith('https://'), chat: configuredChat(), deletionMirrorDir: process.env.PET_DELETION_MIRROR_DIR, ...configuredVoice() });
+  const app = createApp({ store, openRegistration: process.env.PET_OPEN_REGISTRATION === 'true', downloadsDir: process.env.PET_DOWNLOADS_DIR, dataDir: process.env.PET_DATA_DIR || resolve(here, '../.cache/pet-app-data'), publicUrl, secureCookies: publicUrl.startsWith('https://'), chat: configuredChat(), deletionMirrorDir: process.env.PET_DELETION_MIRROR_DIR, ...configuredVoice() });
   await app.ready;
   app.server.listen(Number(process.env.PORT || 8899), process.env.PET_HOST || '127.0.0.1', () => console.log(`大肥鱼 PWA: ${publicUrl}`));
   for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => { app.close().then(() => process.exit(0)); });

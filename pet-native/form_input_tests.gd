@@ -29,7 +29,7 @@ func run() -> void:
     await process_frame
     room._show_page("settings")
     await process_frame
-    for field in [room.username_input, room.password_input, room.invite_input, room.server_input]:
+    for field in [room.username_input, room.password_input, room.server_input]:
         field.text = ""
         await tap(field)
         assert(field.has_focus(), "Touch must focus " + field.placeholder_text)
@@ -50,7 +50,6 @@ func run() -> void:
     for registering in [true, false]:
         room.username_input.text = "offline-user"
         room.password_input.text = "offline-password-123"
-        room.invite_input.text = "offline-invite"
         await room._authenticate(registering)
         var request: Dictionary = room.api.requests.back()
         assert(request.method == HTTPClient.METHOD_POST)
@@ -58,7 +57,7 @@ func run() -> void:
         assert(request.body.username == "offline-user")
         assert(request.body.password == "offline-password-123")
         if registering:
-            assert(request.body.invite == "offline-invite")
+            assert(not request.body.has("invite"))
         assert(room.auth_label.text == "离线测试：服务暂不可用", "Display the actual API error at the default domain")
     assert(room.api.requests.size() == 2)
     assert(not room.busy)

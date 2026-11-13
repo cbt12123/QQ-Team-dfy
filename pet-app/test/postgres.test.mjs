@@ -112,3 +112,17 @@ test('migration replays a journal deletion that was not yet applied to SQLite', 
   await migrateSqlite({ sourceDir, connectionString: process.env.PET_TEST_DATABASE_URL, schema });
   assert.equal((await store.memories(user.id)).length, 0);
 });
+
+test('PostgreSQL open registration preserves admin boundaries and private defaults', { skip: !enabled }, async t => {
+  const { store } = await fixture(t);
+  const body = { username: 'open_pg_user', password: 'postgres-test-password-123', admin: true };
+  await assert.rejects(store.register(body), error => error.status === 400);
+  const user = await store.register(body, { allowWithoutInvite: true });
+  assert.equal(Boolean(user.admin), false);
+  await assert.rejects(store.register(body, { allowWithoutInvite: true }), error => error.status === 409);
+  const empty = await store.register({ ...body, username: 'empty_pg_invite', invite: '' }, { allowWithoutInvite: true });
+  assert.equal(Boolean(empty.admin), false);
+  await assert.rejects(store.register({ ...body, username: 'bad_pg_invite', invite: 'forged' }, { allowWithoutInvite: true }), error => error.status === 400);
+  const admin = await store.register({ ...body, username: 'legacy_pg_admin', invite: await store.createInvite({ admin: true }) }, { allowWithoutInvite: true });
+  assert.equal(Boolean(admin.admin), true);
+});

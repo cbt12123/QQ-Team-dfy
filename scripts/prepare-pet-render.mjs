@@ -27,8 +27,23 @@ for (const name of [...packages].sort()) {
 mkdirSync(join(target, 'pet-app/public/licenses'), { recursive: true });
 writeFileSync(join(target, 'pet-app/public/licenses/postgres-driver.txt'), notices.join('\n---\n\n').trimEnd() + '\n');
 writeFileSync(join(target, 'package.json'), JSON.stringify({ name: 'dafeyu-public-chat', private: true, type: 'module', scripts: { start: 'node server.mjs' }, engines: { node: '>=24 <25' } }, null, 2) + '\n');
-const apk = readFileSync(join(root, 'artifacts/dafeyu-native-arm64-debug.apk'));
-const hash = createHash('sha256').update(apk).digest('hex');
-writeFileSync(join(target, 'public/downloads/dafeyu-android.apk'), apk);
-writeFileSync(join(target, 'public/downloads/dafeyu-android.sha256'), hash + '  dafeyu-android.apk\n');
-console.log(JSON.stringify({ prepared: true, bundledPackages: packages.size, apkSha256: hash, secretsCopied: false }));
+const version = JSON.parse(readFileSync(join(root, 'pet-native/version.json'), 'utf8'));
+if (!Number.isInteger(version.version_code) || version.version_code < 1 || typeof version.version_name !== 'string' || version.package_name !== 'com.dafeyu.pet') throw new Error('无效的 Android 版本元数据');
+const presets = readFileSync(join(root, 'pet-native/export_presets.cfg'), 'utf8');
+for (const [pattern, expected] of [[/^version\/code=(\d+)$/gm, String(version.version_code)], [/^version\/name="([^"]+)"$/gm, version.version_name]]) {
+  const matches = [...presets.matchAll(pattern)];
+  if (matches.length !== 2 || matches.some(match => match[1] !== expected)) throw new Error('Android 导出预设与版本元数据不一致');
+}
+const publicUrl = process.env.PET_PUBLIC_URL || 'https://qqbot-public-web-test.onrender.com';
+if (new URL(publicUrl).protocol !== 'https:') throw new Error('Android 更新地址必须使用 HTTPS');
+const artifacts = {};
+mkdirSync(join(target, 'public/downloads'), { recursive: true });
+for (const [architecture, filename] of [['arm64', 'dafeyu-android.apk'], ['x86_64', 'dafeyu-android-x86_64.apk']]) {
+  const apk = readFileSync(join(root, `artifacts/dafeyu-native-${architecture}-debug.apk`));
+  const sha256 = createHash('sha256').update(apk).digest('hex');
+  writeFileSync(join(target, 'public/downloads', filename), apk);
+  writeFileSync(join(target, 'public/downloads', filename.replace('.apk', '.sha256')), sha256 + '  ' + filename + '\n');
+  artifacts[architecture] = { url: new URL('/downloads/' + filename, publicUrl).href, sha256, size: apk.length };
+}
+writeFileSync(join(target, 'public/downloads/app-release.json'), JSON.stringify({ ...version, artifacts }, null, 2) + '\n');
+console.log(JSON.stringify({ prepared: true, bundledPackages: packages.size, artifacts, secretsCopied: false }));

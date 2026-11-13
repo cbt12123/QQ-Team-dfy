@@ -2,6 +2,7 @@ import { PetActions } from './actions.js';
 
 const $ = id => document.getElementById(id);
 let user = null, capabilities = {}, epoch = 0, registering = false, sending = false, pet, assets = [], currentAudio, audioUrl, installPrompt;
+let openRegistration = false;
 let recordingTask, recordingSerial = 0, reducedTimer;
 const channel = typeof BroadcastChannel === 'function' ? new BroadcastChannel('dafeyu-account') : null;
 const show = (id, visible) => { $(id).hidden = !visible; };
@@ -41,10 +42,10 @@ function signedOut() {
   error('chat-error'); error('memory-error'); bubble('你好呀，欢迎来到我的小房间。');
 }
 function authMode(register) {
-  registering = register; show('invite-label', register); show('display-label', register);
+  registering = register; show('invite-label', register && !openRegistration); show('display-label', register);
   $('login-tab').classList.toggle('selected', !register); $('register-tab').classList.toggle('selected', register);
   $('password').autocomplete = register ? 'new-password' : 'current-password';
-  $('invite').required = register; $('auth-title').textContent = register ? '给你留了一个位置。' : '来，坐一会儿。'; error('auth-error');
+  $('invite').required = register && !openRegistration; $('auth-title').textContent = register ? '给你留了一个位置。' : '来，坐一会儿。'; error('auth-error');
 }
 async function signedIn(data) {
   epoch++; user = data.user; capabilities = data.capabilities;
@@ -207,6 +208,7 @@ function consumeInvitation() {
 }
 window.addEventListener('hashchange', consumeInvitation);
 consumeInvitation();
+try { openRegistration = Boolean((await api('/health')).capabilities.openRegistration); authMode(registering); } catch { /* Keep private registration when offline. */ }
 try {
   const response = await fetch('/assets/actions.json'); if (!response.ok) throw new Error();
   assets = (await response.json()).actions;
