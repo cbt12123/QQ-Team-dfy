@@ -1,17 +1,17 @@
 {
-  "version_code": 7,
-  "version_name": "0.3.0",
+  "version_code": 8,
+  "version_name": "0.3.1",
   "package_name": "com.dafeyu.pet",
-  "release_notes": "动作音效与九项互动；精简账号设置和独立性格；即时消息、真实流式回复和气泡聊天。",
+  "release_notes": "修正自定义性格优先级：作为当前账号的角色与行为规则，覆盖默认人设；保留原有对话和记忆。",
   "artifacts": {
     "arm64": {
       "url": "https://qqbot-public-web-test.onrender.com/downloads/dafeyu-android.apk",
-      "sha256": "6e8ac394d5d83ba25e01136b2fe341bbe354305709f596c55c0d2e082b09504e",
-      "size": 63400800
+      "sha256": "2bc5f3449a406783efe047d8689afe3edbb8d33fb2240100daa43794f0345485",
+      "size": 63404896
     },
     "x86_64": {
       "url": "https://qqbot-public-web-test.onrender.com/downloads/dafeyu-android-x86_64.apk",
-      "sha256": "f206b691d963597595d15a3b75b5a976f3efb5d428b2ac69c20e30424d007e9f",
+      "sha256": "a88f89de44871ece95806b993f6237ae8c648f81ec3aa6d9ea7f1fba5dfba800",
       "size": 66181978
     }
   }
