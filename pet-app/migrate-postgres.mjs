@@ -7,6 +7,7 @@ import { PostgresStore, applyPgDeletion } from './postgres-store.mjs';
 
 const columns = {
   users: ['id', 'username', 'display_name', 'password_hash', 'admin', 'generation'],
+  personalities: ['user_id', 'preset', 'custom'],
   memories: ['id', 'user_id', 'text', 'created'],
   messages: ['id', 'user_id', 'request_id', 'role', 'text', 'created'],
   requests: ['user_id', 'request_id', 'state', 'generation', 'response_id', 'error', 'input_hash'],
@@ -20,6 +21,7 @@ export async function migrateSqlite({ sourceDir, connectionString, schema = 'daf
     snapshot.users = source.prepare('SELECT * FROM users ORDER BY id').all().filter(row => !excludeUsers.includes(row.username));
     const owners = new Set(snapshot.users.map(user => user.id));
     for (const table of ['memories', 'messages', 'requests']) snapshot[table] = source.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all().filter(row => owners.has(row.user_id));
+    snapshot.personalities = source.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='personalities'").get() ? source.prepare('SELECT * FROM personalities ORDER BY user_id').all().filter(row => owners.has(row.user_id)) : [];
     snapshot.appliedDeletions = source.prepare('SELECT id FROM applied_deletions ORDER BY id').all().map(row => row.id);
     snapshot.deletions = readFileSync(join(resolve(sourceDir), 'deletions.jsonl'), 'utf8').split('\n').filter(Boolean).map(line => JSON.parse(line)).filter(record => owners.has(record.userId));
     source.exec('COMMIT');

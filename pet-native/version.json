@@ -1,6 +1,6 @@
 {
-  "version_code": 6,
-  "version_name": "0.2.1",
+  "version_code": 7,
+  "version_name": "0.3.0",
   "package_name": "com.dafeyu.pet",
-  "release_notes": "无需邀请码直接注册；新增App内检查更新、下载校验与系统安装入口。"
+  "release_notes": "动作音效与九项互动；精简账号设置和独立性格；即时消息、真实流式回复和气泡聊天。"
 }

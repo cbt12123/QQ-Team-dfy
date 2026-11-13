@@ -21,6 +21,7 @@ export class Store {
     this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;
       CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, username TEXT UNIQUE NOT NULL, display_name TEXT NOT NULL,
         password_hash TEXT NOT NULL, admin INTEGER NOT NULL DEFAULT 0, generation INTEGER NOT NULL DEFAULT 0);
+      CREATE TABLE IF NOT EXISTS personalities(user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,preset TEXT NOT NULL,custom TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS sessions (hash TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, expires INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS invites (hash TEXT PRIMARY KEY, admin INTEGER NOT NULL DEFAULT 0, expires INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS messages (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -85,6 +86,14 @@ export class Store {
   logout(value) { this.db.prepare('DELETE FROM sessions WHERE hash=?').run(digest(value || '')); }
   history(userId) { return this.db.prepare('SELECT id,role,text,created FROM messages WHERE user_id=? ORDER BY rowid DESC LIMIT 500').all(userId).reverse(); }
   exportHistory(userId) { return this.db.prepare('SELECT id,role,text,created FROM messages WHERE user_id=? ORDER BY rowid').all(userId); }
+  async personality(userId) {
+    return await this.db.prepare('SELECT preset,custom FROM personalities WHERE user_id=?').get(userId) || { preset: 'friendly', custom: '' };
+  }
+  async setPersonality(userId, { preset, custom }) {
+    if (!['friendly', 'playful', 'calm'].includes(preset) || typeof custom !== 'string' || custom.length > 1000) throw failure(400, '请选择有效性格，自定义说明最多1000字');
+    await this.db.prepare('INSERT INTO personalities(user_id,preset,custom) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET preset=excluded.preset,custom=excluded.custom').run(userId, preset, custom);
+    return { preset, custom };
+  }
   memories(userId) { return this.db.prepare('SELECT id,text,created FROM memories WHERE user_id=? ORDER BY created,rowid').all(userId); }
   addMemory(userId, text) {
     if (typeof text !== 'string' || !text.trim() || text.length > 500) throw failure(400, '记忆需1～500字');

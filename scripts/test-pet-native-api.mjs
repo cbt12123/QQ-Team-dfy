@@ -14,7 +14,13 @@ const app = createApp({
   openRegistration: true,
   dataDir: directory,
   secureCookies: false,
-  chat: { reply: async ({ text }) => {
+  chat: { stream: async ({ text, onDelta, signal }) => {
+    if (text.includes('late-private')) await new Promise(resolve => setTimeout(resolve, 300));
+    signal?.throwIfAborted();
+    const answer = 'native-fixture:' + text;
+    for (const chunk of [answer.slice(0, 8), answer.slice(8)]) { onDelta(chunk); await new Promise(resolve => setTimeout(resolve, 15)); }
+    return answer;
+  }, reply: async ({ text }) => {
     if (text.includes('late-private')) await new Promise(resolve => setTimeout(resolve, 300));
     return 'native-fixture:' + text;
   } },

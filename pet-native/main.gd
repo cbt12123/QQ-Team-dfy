@@ -3,6 +3,7 @@ extends Control
 const StateSource = preload("res://pet_state.gd")
 const ApiSource = preload("res://api_client.gd")
 const StageSource = preload("res://room_stage.gd")
+const AudioSource = preload("res://pet_audio.gd")
 const UpdateSource = preload("res://app_updater.gd")
 
 var state = StateSource.new()
@@ -20,12 +21,25 @@ var current_action := ""
 var finger := -99
 var user: Dictionary = {}
 var capabilities: Dictionary = {}
-var chat_log: RichTextLabel
+var chat_log: RichTextLabel # Hidden compatibility transcript; visible messages use bubbles.
+var chat_scroll: ScrollContainer
+var chat_rows: VBoxContainer
+var emoji_palette: HBoxContainer
+var login_form: VBoxContainer
+var account_panel: VBoxContainer
+var auth_buttons: Array[Button] = []
+var personality_choice: OptionButton
+var personality_custom: TextEdit
+var personality_label: Label
+var personality_busy := false
+var history_loading := false
+var chat_revision := 0
+var audio = AudioSource.new()
+var last_tap_ms := -1000
 var chat_input: TextEdit
 var send_button: Button
 var network_label: Label
 var account_label: Label
-var server_input: LineEdit
 var username_input: LineEdit
 var password_input: LineEdit
 var updater = UpdateSource.new()
@@ -42,6 +56,7 @@ var keyboard_inset := 0
 func _ready() -> void:
     add_child(api)
     add_child(updater)
+    add_child(audio)
     var manifest: Array = JSON.parse_string(FileAccess.get_file_as_string("res://assets/actions.json"))
     for action in manifest:
         actions[str(action.key)] = action
@@ -49,10 +64,6 @@ func _ready() -> void:
     theme.default_font = load("res://assets/fonts/NotoSansCJKsc-Regular.otf")
     theme.default_font_size = 18
     _build_ui()
-    var config := ConfigFile.new()
-    if config.load("user://settings.cfg") == OK:
-        api.set_base(str(config.get_value("connection", "server", api.base_url)))
-    server_input.text = api.base_url
     _sync_action()
     get_viewport().size_changed.connect(_place_pet)
     if "--capture" in OS.get_cmdline_user_args():
@@ -129,7 +140,7 @@ func _build_ui() -> void:
     var page_holder := Control.new()
     page_holder.size_flags_vertical = Control.SIZE_EXPAND_FILL
     column.add_child(page_holder)
-    for key in ["room", "chat", "settings", "credits"]:
+    for key in ["room", "chat", "settings", "personality", "credits"]:
         var page := VBoxContainer.new()
         page.add_theme_constant_override("separation", 12)
         page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -138,6 +149,7 @@ func _build_ui() -> void:
     _build_room(pages.room)
     _build_chat(pages.chat)
     _build_settings(pages.settings)
+    _build_personality(pages.personality)
     _build_credits(pages.credits)
     var navigation := HBoxContainer.new()
     navigation.add_theme_constant_override("separation", 10)
@@ -179,6 +191,19 @@ func _build_room(room: VBoxContainer) -> void:
         grid.add_child(_button(entry[0], func(): _play(key, line)))
     sleep_button = _button("睡一会儿", _toggle_sleep)
     grid.add_child(sleep_button)
+    grid.add_child(_button("陪我聊聊", func():
+        _show_page("chat")
+        chat_input.grab_focus()
+        if user.is_empty(): network_label.text = "请先到设置登录，再开始聊天。"))
+    grid.add_child(_button("随机惊喜", func():
+        var choices := ["wave", "stretch", "bubbles", "feed"]
+        _play(choices.pick_random(), "送你一个小惊喜！")))
+    grid.add_child(_button("回到身边", func():
+        _cancel_drag()
+        state.offset = Vector2.ZERO
+        if not state.sleeping: state.play("idle")
+        bubble_label.text = "回到你身边啦。"
+        _sync_action()))
     var credit := Button.new()
     credit.flat = true
     credit.text = "非商业同人体验版 · 角色与素材许可"
@@ -189,28 +214,68 @@ func _build_room(room: VBoxContainer) -> void:
 
 func _build_chat(page: VBoxContainer) -> void:
     _label(page, "只属于你的聊天", 27)
-    network_label = _label(page, "云端正式聊天尚未上线。先在设置里填写服务器并登录；现在可以离线玩动作。", 15, "8c7b53")
+    network_label = _label(page, "请在设置中注册或登录后聊天。", 15, "8c7b53")
     chat_log = RichTextLabel.new()
-    chat_log.bbcode_enabled = false
-    chat_log.scroll_following = true
-    chat_log.selection_enabled = true
-    chat_log.size_flags_vertical = Control.SIZE_EXPAND_FILL
-    chat_log.add_theme_color_override("default_color", Color("355345"))
-    chat_log.add_theme_stylebox_override("normal", _box("ffffff"))
-    chat_log.text = "这里还没有故事。\n从一句你好开始，也很好。"
+    chat_log.visible = false
     page.add_child(chat_log)
+    chat_scroll = ScrollContainer.new()
+    chat_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    chat_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+    page.add_child(chat_scroll)
+    chat_rows = VBoxContainer.new()
+    chat_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    chat_rows.add_theme_constant_override("separation", 12)
+    chat_scroll.add_child(chat_rows)
+    var composer := HBoxContainer.new()
+    page.add_child(composer)
     chat_input = TextEdit.new()
-    chat_input.custom_minimum_size.y = 100
+    chat_input.custom_minimum_size = Vector2(0, 84)
+    chat_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     chat_input.placeholder_text = "今天发生了什么？"
+    chat_input.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
     chat_input.add_theme_color_override("font_color", Color("355345"))
-    chat_input.add_theme_color_override("font_placeholder_color", Color("758575"))
-    chat_input.add_theme_color_override("caret_color", Color("355345"))
     chat_input.add_theme_stylebox_override("normal", _box("ffffff"))
-    chat_input.add_theme_stylebox_override("focus", _box("ffffff"))
-    page.add_child(chat_input)
+    composer.add_child(chat_input)
+    var emoji_button := _button("☺", func(): emoji_palette.visible = not emoji_palette.visible)
+    emoji_button.size_flags_horizontal = Control.SIZE_SHRINK_END
+    composer.add_child(emoji_button)
     send_button = _button("发送", _send_message, true)
-    page.add_child(send_button)
-    _label(page, "当前 APK 先验证动作和文字入口；原生录音、语音播放后续接入。", 12, "89947f")
+    send_button.size_flags_horizontal = Control.SIZE_SHRINK_END
+    composer.add_child(send_button)
+    emoji_palette = HBoxContainer.new()
+    emoji_palette.visible = false
+    page.add_child(emoji_palette)
+    for glyph in ["😊", "❤️", "🐟", "✨", "🌙", "👋"]:
+        var emoji: String = glyph
+        emoji_palette.add_child(_button(emoji, func(): chat_input.insert_text_at_caret(emoji)))
+
+func _append_bubble(role: String, text: String) -> Label:
+    var row := HBoxContainer.new()
+    chat_rows.add_child(row)
+    var spacer := Control.new()
+    spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    var panel := PanelContainer.new()
+    panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    panel.size_flags_stretch_ratio = 4.0
+    panel.add_theme_stylebox_override("panel", _box("cce7b5" if role == "user" else "ffffff", 12))
+    if role == "user": row.add_child(spacer)
+    row.add_child(panel)
+    if role != "user": row.add_child(spacer)
+    var label := _label(panel, text, 17)
+    label.tooltip_text = "你" if role == "user" else "大肥鱼"
+    chat_log.text += text + "\n"
+    _scroll_chat.call_deferred()
+    return label
+
+func _scroll_chat() -> void:
+    await get_tree().process_frame
+    chat_scroll.scroll_vertical = int(chat_scroll.get_v_scroll_bar().max_value)
+
+func _clear_chat() -> void:
+    for child in chat_rows.get_children():
+        chat_rows.remove_child(child)
+        child.queue_free()
+    chat_log.text = ""
 
 func _build_settings(page: VBoxContainer) -> void:
     _label(page, "连接你的大肥鱼", 27)
@@ -222,22 +287,34 @@ func _build_settings(page: VBoxContainer) -> void:
     form.add_theme_constant_override("separation", 12)
     form.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     scroll.add_child(form)
-    _label(form, "填写服务器的 HTTPS 地址，直接注册或登录已有账号。每个人的聊天和记忆独立保存。", 15, "819179")
-    _label(form, "服务器地址", 15)
-    server_input = _field(form, "https://你的服务器")
-    form.add_child(_button("保存服务器地址", _save_server))
-    _label(form, "只连接你信任的服务器。聊天会经云端发送到模型服务商。", 12, "89947f")
-    username_input = _field(form, "用户名（英文、数字或下划线）")
+    _label(form, "每个人的聊天、记忆和性格设置独立保存。", 15, "819179")
+    login_form = VBoxContainer.new()
+    login_form.add_theme_constant_override("separation", 12)
+    form.add_child(login_form)
+    username_input = _field(login_form, "用户名（英文、数字或下划线）")
     username_input.max_length = 32
-    password_input = _field(form, "密码（至少12位）", true)
+    password_input = _field(login_form, "密码（至少12位）", true)
     password_input.max_length = 128
     var row := HBoxContainer.new()
-    row.add_theme_constant_override("separation", 10)
-    form.add_child(row)
-    row.add_child(_button("登录", func(): _authenticate(false), true))
-    row.add_child(_button("注册", func(): _authenticate(true)))
-    form.add_child(_button("退出并清除当前页面", _logout))
-    auth_label = _label(form, "无需登录即可玩动作。注册和聊天取决于所连接的服务；登录会话仅在内存保存，退出 App 后需重新登录。", 13, "819179")
+    login_form.add_child(row)
+    for registering in [false, true]:
+        var register: bool = registering
+        var button := _button("注册" if register else "登录", func(): _authenticate(register), not register)
+        auth_buttons.append(button)
+        row.add_child(button)
+    account_panel = VBoxContainer.new()
+    account_panel.visible = false
+    form.add_child(account_panel)
+    account_panel.add_child(_button("设置大肥鱼的性格", func(): _show_page("personality"); _load_personality()))
+    account_panel.add_child(_button("退出登录", _logout))
+    auth_label = _label(form, "无需登录即可玩动作；登录会话仅在内存保存。", 13, "819179")
+    var sound_toggle := CheckButton.new()
+    for color_name in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+        sound_toggle.add_theme_color_override(color_name, Color("355345"))
+    sound_toggle.text = "动作音效"
+    sound_toggle.button_pressed = audio.enabled
+    sound_toggle.toggled.connect(func(value: bool): audio.set_enabled(value))
+    form.add_child(sound_toggle)
     form.add_child(_button("角色、引擎与字体许可", func(): _show_page("credits")))
     _label(form, "应用更新 · 当前 " + str(updater.version.version_name), 20)
     update_label = _label(form, "下载后由 Android 确认安装，会保留已有应用数据。", 14)
@@ -255,6 +332,53 @@ func _build_settings(page: VBoxContainer) -> void:
     updater.progress.connect(func(downloaded: int, total: int):
         update_label.text = "正在下载：%.1f / %.1f MB" % [downloaded / 1048576.0, total / 1048576.0])
     _update_buttons()
+
+func _build_personality(page: VBoxContainer) -> void:
+    _label(page, "大肥鱼的性格", 27)
+    _label(page, "只影响当前账号的聊天风格。", 15)
+    personality_choice = OptionButton.new()
+    for title in ["亲切友好", "活泼俏皮", "平静温柔"]:
+        personality_choice.add_item(title)
+    page.add_child(personality_choice)
+    personality_custom = TextEdit.new()
+    personality_custom.placeholder_text = "写下你希望的聊天风格（最多1000字）"
+    personality_custom.custom_minimum_size.y = 180
+    personality_custom.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+    page.add_child(personality_custom)
+    personality_custom.text_changed.connect(func():
+        personality_label.text = "%d / 1000字" % personality_custom.text.length())
+    personality_label = _label(page, "", 14)
+    page.add_child(_button("保存性格", _save_personality, true))
+    page.add_child(_button("返回设置", func(): _show_page("settings")))
+
+func _load_personality() -> void:
+    if user.is_empty() or personality_busy: return
+    personality_busy = true
+    var version: int = api.generation
+    personality_label.text = "正在读取…"
+    var result: Dictionary = await api.request_json(HTTPClient.METHOD_GET, "/api/personality")
+    personality_busy = false
+    if version != api.generation: return
+    if not result.ok:
+        personality_label.text = str(result.error)
+        return
+    var value: Dictionary = result.data.get("personality", result.data)
+    personality_choice.select(maxi(0, ["friendly", "playful", "calm"].find(value.get("preset", "friendly"))))
+    personality_custom.text = str(value.get("custom", ""))
+    personality_label.text = "已读取当前账号的性格。"
+
+func _save_personality() -> void:
+    if user.is_empty() or personality_busy: return
+    if personality_custom.text.length() > 1000:
+        personality_label.text = "自定义性格最多1000字，请缩短后保存。"
+        return
+    personality_busy = true
+    var version: int = api.generation
+    personality_label.text = "正在保存…"
+    var result: Dictionary = await api.request_json(HTTPClient.METHOD_PUT, "/api/personality", {"preset": ["friendly", "playful", "calm"][personality_choice.selected], "custom": personality_custom.text})
+    personality_busy = false
+    if version != api.generation: return
+    personality_label.text = "性格已保存。" if result.ok else str(result.error)
 
 func _update_buttons() -> void:
     update_check_button.disabled = is_instance_valid(updater.request)
@@ -330,6 +454,7 @@ func _sync_action() -> void:
         current_action = state.action
         player.sprite_frames = _frames_for(current_action)
         player.play(current_action)
+        audio.play_action(current_action)
         if OS.is_debug_build():
             print("PET_ACTION:", current_action, " CACHE:", frame_cache.size())
     sleep_button.text = "叫她起床" if state.sleeping else "睡一会儿"
@@ -440,30 +565,31 @@ func _input(event: InputEvent) -> void:
             bubble_label.text = "到这里啦，还是你身边舒服。"
             _sync_action()
         else:
-            _play("touch", "嘿嘿，有点痒。")
+            var now := Time.get_ticks_msec()
+            if now - last_tap_ms < 350:
+                _play("bubbles", "咕噜咕噜，接住你的小开心。")
+                last_tap_ms = -1000
+            else:
+                _play("touch", "嘿嘿，有点痒。")
+                last_tap_ms = now
     else:
         return
     get_viewport().set_input_as_handled()
-
-func _save_server() -> void:
-    if not api.set_base(server_input.text):
-        auth_label.text = "请填不带路径的 HTTPS 地址；HTTP 仅允许本机与模拟器调试地址。"
-        return
-    api.invalidate()
-    _clear_account()
-    var config := ConfigFile.new()
-    config.set_value("connection", "server", api.base_url)
-    var saved := config.save("user://settings.cfg")
-    auth_label.text = "服务器地址已保存，请登录。" if saved == OK else "当前会话地址已设置，但无法保存到设备。"
 
 func _clear_account() -> void:
     user = {}
     capabilities = {}
     password_input.text = ""
     chat_input.text = ""
-    chat_log.text = "这里还没有故事。"
+    chat_revision += 1
+    _clear_chat()
+    login_form.visible = true
+    account_panel.visible = false
+    personality_custom.text = ""
+    personality_choice.select(0)
+    personality_label.text = ""
     account_label.text = "就在这里"
-    network_label.text = "请先在设置中连接服务器并登录。"
+    network_label.text = "请先在设置中注册或登录。"
 
 func _logout() -> void:
     api.logout_remotely()
@@ -473,13 +599,11 @@ func _logout() -> void:
 func _authenticate(registering: bool) -> void:
     if busy:
         return
-    if not api.set_base(server_input.text):
-        auth_label.text = "服务器地址不正确。"
-        return
     if username_input.text.length() < 3 or password_input.text.length() < 12:
         auth_label.text = "用户名至少3位，密码至少12位。"
         return
     busy = true
+    for button in auth_buttons: button.disabled = true
     var body := {"username": username_input.text, "password": password_input.text}
     api.invalidate()
     _clear_account()
@@ -487,6 +611,7 @@ func _authenticate(registering: bool) -> void:
     auth_label.text = "正在连接…"
     var result: Dictionary = await api.request_json(HTTPClient.METHOD_POST, "/api/register" if registering else "/api/login", body)
     busy = false
+    for button in auth_buttons: button.disabled = false
     if version != api.generation:
         return
     password_input.text = ""
@@ -497,6 +622,8 @@ func _authenticate(registering: bool) -> void:
         auth_label.text = "登录响应格式不正确，请检查服务器地址。"
         return
     user = result.data.user
+    login_form.visible = false
+    account_panel.visible = true
     account_label.text = str(user.get("displayName", user.get("username", "朋友")))
     var me: Dictionary = await api.request_json(HTTPClient.METHOD_GET, "/api/me")
     if version != api.generation:
@@ -508,61 +635,85 @@ func _authenticate(registering: bool) -> void:
         return
     if me.ok and me.data.get("capabilities") is Dictionary:
         capabilities = me.data.capabilities
-    auth_label.text = "登录成功。会话仅在当前 App 进程中保存。"
+    auth_label.text = ("注册成功，已自动登录。" if registering else "登录成功。") + "会话仅在当前 App 进程中保存。"
     network_label.text = "你的记录和记忆只属于这个账号。" if capabilities.get("chat", false) else "此服务器尚未配置聊天模型。"
     await _load_history(version)
     if version == api.generation:
+        network_label.text = auth_label.text + " " + network_label.text
         _show_page("chat")
 
+func _expire_session() -> void:
+    api.invalidate()
+    _clear_account()
+    auth_label.text = "登录已失效，请重新登录。"
+    network_label.text = auth_label.text
+    _show_page("settings")
+
 func _load_history(version: int) -> void:
+    history_loading = true
+    var revision := chat_revision
     var result: Dictionary = await api.request_json(HTTPClient.METHOD_GET, "/api/messages")
-    if version != api.generation:
+    history_loading = false
+    if version != api.generation or revision != chat_revision:
         return
     if not result.ok:
         if result.get("status", 0) == 401:
-            api.invalidate()
-            _clear_account()
+            _expire_session()
+            return
         network_label.text = str(result.error)
         return
-    var lines := PackedStringArray()
     if not result.data.get("messages") is Array:
         network_label.text = "聊天记录格式不正确。"
         return
+    _clear_chat()
     var messages: Array = result.data.messages
     for message in messages.slice(maxi(0, messages.size() - 60)):
         if message is Dictionary and message.get("text") is String:
-            lines.append(("你" if message.get("role") == "user" else "大肥鱼") + "\n" + str(message.text) + "\n")
-    chat_log.text = "\n".join(lines) if not lines.is_empty() else "这里还没有故事。从一句你好开始吧。"
+            _append_bubble(str(message.get("role", "assistant")), str(message.text))
 
 func _send_message() -> void:
-    if busy:
+    if busy or history_loading:
         return
     if user.is_empty():
-        network_label.text = "请先到设置连接服务器并登录后聊天。"
+        network_label.text = "请先到设置注册或登录后聊天。"
         return
     var text := chat_input.text.strip_edges()
     if text.is_empty() or text.length() > 4000:
         network_label.text = "消息需1～4000字。"
         return
     busy = true
+    chat_revision += 1
     send_button.disabled = true
     var version: int = api.generation
+    var draft := _append_bubble("user", text)
+    chat_input.text = ""
+    emoji_palette.visible = false
+    var reply := _append_bubble("assistant", "正在想你的话…")
+    var received := [false]
     network_label.text = "大肥鱼正在想你的话…"
     var request_id := Crypto.new().generate_random_bytes(16).hex_encode()
-    var result: Dictionary = await api.request_json(HTTPClient.METHOD_POST, "/api/messages", {"requestId": request_id, "text": text})
+    var result: Dictionary = await api.stream_message({"requestId": request_id, "text": text}, func(delta: String):
+        if version != api.generation or not is_instance_valid(reply): return
+        if not received[0]:
+            reply.text = ""
+            received[0] = true
+        reply.text += delta
+        chat_log.text += delta
+        _scroll_chat.call_deferred())
     busy = false
     send_button.disabled = false
     if version != api.generation:
         return
     if not result.ok:
         if result.get("status", 0) == 401:
-            api.invalidate()
-            _clear_account()
-        network_label.text = str(result.error) + "；网络中断后请先重新登录查看记录，勿连续重发。"
+            _expire_session()
+            return
+        draft.tooltip_text = "发送结果未确认，请查看记录后再决定是否重发。"
+        reply.text = (reply.text + "\n" if received[0] else "") + "回复中断：" + str(result.error)
+        network_label.text = "发送结果未确认；请重新登录查看记录，避免重复发送。"
         return
-    chat_input.text = ""
+    if not received[0]: reply.text = "回复未返回文字，请稍后查看记录。"
     network_label.text = "你说的，我认真听着。"
-    await _load_history(version)
 
 func _notification(what: int) -> void:
     if player == null:

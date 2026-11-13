@@ -28,6 +28,7 @@ export/android/debug_keystore_user = "androiddebugkey"
 export/android/debug_keystore_pass = "android"
 EOF
 "$PET_GODOT" --headless --path "$PET_ROOT/pet-native" --editor --import > "$PET_ROOT/.cache/pet-native-linux-import.log" 2>&1
+"$PET_GODOT" --headless --path "$PET_ROOT/pet-native" --script res://audio_tests.gd
 "$PET_GODOT" --headless --path "$PET_ROOT/pet-native" --script res://update_tests.gd
 "$PET_GODOT" --headless --path "$PET_ROOT/pet-native" --script res://tests.gd
 "$PET_GODOT" --headless --path "$PET_ROOT/pet-native" --script res://interaction_tests.gd

@@ -126,3 +126,16 @@ test('PostgreSQL open registration preserves admin boundaries and private defaul
   const admin = await store.register({ ...body, username: 'legacy_pg_admin', invite: await store.createInvite({ admin: true }) }, { allowWithoutInvite: true });
   assert.equal(Boolean(admin.admin), true);
 });
+
+
+test('PostgreSQL personality is isolated and survives a new pool', { skip: !enabled }, async t => {
+  const { schema, request, register } = await fixture(t);
+  const a = await register('pg_style_alice'); const b = await register('pg_style_bob');
+  const value = { preset: 'calm', custom: 'Use short reassuring sentences' };
+  assert.equal((await request('/api/personality', a.cookie, value, 'PUT')).status, 200);
+  assert.deepEqual((await request('/api/personality', a.cookie)).data, value);
+  assert.deepEqual((await request('/api/personality', b.cookie)).data, { preset: 'friendly', custom: '' });
+  const reopened = await PostgresStore.open(process.env.PET_TEST_DATABASE_URL, { schema });
+  try { assert.deepEqual(await reopened.personality(a.data.user.id), value); }
+  finally { await reopened.close(); }
+});

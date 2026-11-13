@@ -6,7 +6,8 @@ import { digest, token, failure } from './store.mjs';
 const derive = promisify(scrypt);
 const schemaSql = `
 CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY,username TEXT UNIQUE NOT NULL,display_name TEXT NOT NULL,password_hash TEXT NOT NULL,admin INTEGER NOT NULL DEFAULT 0,generation INTEGER NOT NULL DEFAULT 0);
-CREATE TABLE IF NOT EXISTS sessions(hash TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,expires BIGINT NOT NULL);
+CREATE TABLE IF NOT EXISTS personalities(user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,preset TEXT NOT NULL,custom TEXT NOT NULL);
+      CREATE TABLE IF NOT EXISTS sessions(hash TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,expires BIGINT NOT NULL);
 CREATE TABLE IF NOT EXISTS invites(hash TEXT PRIMARY KEY,admin INTEGER NOT NULL,expires BIGINT NOT NULL);
 CREATE TABLE IF NOT EXISTS messages(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,request_id TEXT NOT NULL,role TEXT NOT NULL,text TEXT NOT NULL,created BIGINT NOT NULL,rowid BIGSERIAL UNIQUE);
 CREATE INDEX IF NOT EXISTS messages_owner ON messages(user_id,rowid);
@@ -19,7 +20,7 @@ CREATE TABLE IF NOT EXISTS deletion_log(id TEXT PRIMARY KEY,user_id TEXT NOT NUL
 
 // All callers use fixed application SQL; values always travel as bound parameters.
 function qualify(sql, schema) {
-  return sql.replace(/\b(FROM|JOIN|INTO|UPDATE|REFERENCES|TABLE IF NOT EXISTS|ALTER TABLE|ON)\s+(users|sessions|invites|messages|memories|requests|audio|applied_deletions|deletion_log|migration_meta)\b/gi, `$1 "${schema}".$2`);
+  return sql.replace(/\b(FROM|JOIN|INTO|UPDATE|REFERENCES|TABLE IF NOT EXISTS|ALTER TABLE|ON)\s+(users|personalities|sessions|invites|messages|memories|requests|audio|applied_deletions|deletion_log|migration_meta)\b/gi, `$1 "${schema}".$2`);
 }
 export function sqlDatabase(client, schema = 'public') {
   return { prepare(sql) {
@@ -126,6 +127,14 @@ export class PostgresStore {
   async logout(value) { await this.db.prepare('DELETE FROM sessions WHERE hash=?').run(digest(value || '')); }
   async history(userId) { return (await this.db.prepare('SELECT id,role,text,created FROM messages WHERE user_id=? ORDER BY rowid DESC LIMIT 500').all(userId)).reverse(); }
   async exportHistory(userId) { return this.db.prepare('SELECT id,role,text,created FROM messages WHERE user_id=? ORDER BY rowid').all(userId); }
+  async personality(userId) {
+    return await this.db.prepare('SELECT preset,custom FROM personalities WHERE user_id=?').get(userId) || { preset: 'friendly', custom: '' };
+  }
+  async setPersonality(userId, { preset, custom }) {
+    if (!['friendly', 'playful', 'calm'].includes(preset) || typeof custom !== 'string' || custom.length > 1000) throw failure(400, '请选择有效性格，自定义说明最多1000字');
+    await this.db.prepare('INSERT INTO personalities(user_id,preset,custom) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET preset=excluded.preset,custom=excluded.custom').run(userId, preset, custom);
+    return { preset, custom };
+  }
   async memories(userId) { return this.db.prepare('SELECT id,text,created FROM memories WHERE user_id=? ORDER BY created,rowid').all(userId); }
   async addMemory(userId, text) {
     if (typeof text !== 'string' || !text.trim() || text.length > 500) throw failure(400, '记忆需1～500字');

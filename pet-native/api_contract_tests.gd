@@ -8,7 +8,7 @@ func _run() -> void:
     var room = load("res://main.tscn").instantiate()
     root.add_child(room)
     await process_frame
-    room.server_input.text = str(options.base)
+    room.api.set_base(str(options.base))
     room.username_input.text = "native-contract"
     room.password_input.text = "a native fixture password 123"
     await room._authenticate(true)
@@ -21,7 +21,7 @@ func _run() -> void:
     room._send_message()
     await create_timer(0.03).timeout
     var generation: int = room.api.generation
-    room._save_server()  # Saving even the SAME server must invalidate the old identity.
+    room._logout()
     assert(room.api.generation > generation)
     assert(room.user.is_empty())
     await create_timer(0.5).timeout
