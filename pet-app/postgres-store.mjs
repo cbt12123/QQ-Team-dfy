@@ -5478,14 +5478,14 @@ var PostgresStore = class _PostgresStore {
     await this.db.prepare("INSERT INTO invites(hash,admin,expires) VALUES(?,?,?)").run(digest(value), admin ? 1 : 0, Date.now() + expiresInMs);
     return value;
   }
-  async register({ invite, username, password, displayName }) {
+  async register({ invite = "", username, password, displayName }, { allowWithoutInvite = false } = {}) {
     username = typeof username === "string" ? username.trim().toLowerCase() : "";
     if (!/^[a-z0-9_-]{3,32}$/.test(username) || typeof password !== "string" || password.length < 12 || password.length > 128 || typeof invite !== "string" || invite.length > 100 || displayName !== void 0 && (typeof displayName !== "string" || !displayName.trim() || displayName.length > 32)) throw failure(400, "\u7528\u6237\u540D\u97003\uFF5E32\u4F4D\uFF0C\u5BC6\u7801\u970012\uFF5E128\u4F4D\uFF0C\u6635\u79F0\u6700\u591A32\u5B57");
     const salt = randomBytes2(16).toString("hex");
     const hash = `${salt}:${(await derive2(password, salt, 64)).toString("hex")}`;
     try {
       return await this.transaction(async (db) => {
-        const invitation = await db.prepare("DELETE FROM invites WHERE hash=? AND expires>? RETURNING admin").get(digest(invite), Date.now());
+        const invitation = !invite && allowWithoutInvite ? { admin: 0 } : await db.prepare("DELETE FROM invites WHERE hash=? AND expires>? RETURNING admin").get(digest(invite), Date.now());
         if (!invitation) throw failure(400, "\u9080\u8BF7\u5DF2\u5931\u6548\u6216\u5DF2\u4F7F\u7528");
         const id = randomUUID2();
         await db.prepare("INSERT INTO users(id,username,display_name,password_hash,admin) VALUES(?,?,?,?,?)").run(id, username, (displayName || username).trim(), hash, invitation.admin);
