@@ -4,9 +4,10 @@
 
 ## 本机运行
 
-需要 Node.js 24，无新增生产 npm 依赖。在仓库根目录执行：
+需要 Node.js 24。首次安装本应用的固定版本 PostgreSQL 依赖；本机仍默认使用 SQLite。在仓库根目录执行：
 
 ```powershell
+npm ci --prefix pet-app --ignore-scripts
 Copy-Item pet-app/.env.example pet-app/.env
 # 编辑 pet-app/.env，填写模型地址、模型和密钥。
 node --env-file-if-exists=pet-app/.env pet-app/cli.mjs invite --admin
@@ -19,11 +20,11 @@ node --env-file-if-exists=pet-app/.env pet-app/server.mjs
 
 2026-11-13 本机真实聊天已接入已配置的 DeepSeek。模拟器继续使用原端口和账号，会话随 SQLite 一致性快照迁入 `data/pet-app/`；切换前快照在 `data/pet-app-before-real-chat/`。这两个目录均不提交 Git。原测试回显的助手消息已移除，用户消息保留。实际端口及数据目录由忽略的 `pet-app/.env` 指定。
 
-隐藏后台启动：`node scripts/start-pet-chat.mjs`。日志在 `.cache/pet-chat-server*.log`，PID 在 `.cache/pet-chat-server.pid`；未配置 Windows 开机自启。服务重启保留账号、会话、历史和显式记忆，Android App 退出进程后仍需重新登录。公网版仍只有动作预览，电脑关机后当前模拟器聊天服务不可用。
+隐藏后台启动：`node scripts/start-pet-chat.mjs`。日志在 `.cache/pet-chat-server*.log`，PID 在 `.cache/pet-chat-server.pid`；未配置 Windows 开机自启。服务重启保留账号、会话、历史和显式记忆，Android App 退出进程后仍需重新登录。本机与公网账号数据独立；公网聊天运行于 Render，不依赖电脑或 WSL。
 
 App 聊天使用独立模型适配器，不混入 QQ 群聊/点歌提示；模型不可用时返回错误，不降级成测试回显。模型密钥仅在后端 `.env`。
 
-生产部署 `PET_HOST=0.0.0.0`；必须配置 HTTPS `PET_PUBLIC_URL`、持久化 `PET_DATA_DIR`。Secure Cookie 由公网地址决定。部署后家庭电脑关机不影响服务。
+生产部署 `PET_HOST=0.0.0.0`，配置 HTTPS `PET_PUBLIC_URL`。免费 Render 必须配置持久的 `DATABASE_URL`，不能用临时文件系统保存账号。Secure Cookie 由公网地址决定，家庭电脑关机不影响公网服务。
 
 ## 记忆与隔离
 
@@ -68,11 +69,32 @@ node --env-file=pet-app/.env pet-app/cli.mjs restore --confirm-offline
 
 恢复后旧会话与邀请失效，需重新登录。先在隔离目录核对账号、记忆和删除结果，再切换生产目录。生产恢复前另确认停写窗口。首版最多24小时数据损失、4小时人工恢复仅为配置完善后的目标，不是当前生产 SLA。
 
-## 云端部署材料
+## 免费公网部署
 
-`pet-app/Dockerfile` 用仓库根目录为构建上下文，只复制此应用，不复制 `.env`、QQ数据或本地备份。`pet-app/render.yaml` 是带付费实例和持久磁盘的草案，未经预算确认不得应用。现有免费测试服务保持原样；不将真实私人数据存放在免费实例临时文件系统。
+当前复用免费 Render 服务 `qqbot-public-web-test` 与原域名，连接 Neon PostgreSQL 的独立 `dafeyu` schema。账号、会话、消息、记忆和删除日志在 PostgreSQL 事务中保存，不依赖 Render 磁盘。已验证真实 HTTPS 聊天、两账号隔离和重新部署后记录保留。原 `render.yaml` 是未使用的付费草案，不要直接应用或另建常驻免费实例。
 
-正式上线前尚需：确认付费套餐和预算、设置模型/语音密钥、配置独立备份及每日调度、检查删除日志镜像、验证 iPhone/Android 真机和容量。不能只因开发测试通过就宣称这些外部条件已完成。
+`pet-app/.env.render.local` 只在本机保存 `DATABASE_URL`，已被 Git 忽略。模型和数据库凭据写入 Render 环境变量，不进入源码或 APK。新公网账号通过一次性邀请注册，本机 `native-ui-test` 测试账号未迁入公网。
+
+现有服务构建命令不能经当前连接器修改，因此 `scripts/prepare-pet-render.mjs` 从锁定依赖生成独立的 pg 驱动包并保留许可，再把应用、公开素材和 APK 写入既有发布仓库。生成过程不复制环境文件或本机数据：
+
+```powershell
+npm ci --prefix pet-app --ignore-scripts
+npm install --prefix .cache/pet-render-build esbuild@0.28.2 --ignore-scripts --no-audit --no-fund
+node scripts/prepare-pet-render.mjs
+node --env-file=pet-app/.env --env-file=pet-app/.env.render.local scripts/verify-pet-render-artifact.mjs
+```
+
+`deploy/pet-render-server.mjs` 是发布入口，缺少数据库或模型配置会拒绝启动，不回退到临时 SQLite。生成物使用 Node 24。Dockerfile 为可选源码部署入口，本次使用原生 Node 服务。
+
+`deploy/render-keepalive.yml` 已安装在公共仓库默认 main 分支，每10分钟访问 `/health`，不调用模型、不查询数据库，让 Neon 仍可按需休眠。GitHub 调度可能延迟，Render 免费运行小时由工作区共享，不能承诺绝对不休眠。用 `node scripts/install-render-keepalive.mjs --status` 检查最近一轮；安装脚本复用已有 GitHub 凭据，不输出令牌。
+
+SQLite 迁移命令如下。它在一致性读事务中取数据，目标非空拒绝覆盖，重复同一快照幂等；保留密码登录、消息顺序和删除记录，不迁移旧会话/邀请。源 SQLite 不修改。带 `--exclude-test-account` 会跳过已用于演示的 `native-ui-test`：
+
+```powershell
+node --env-file=pet-app/.env.render.local pet-app/migrate-postgres.mjs data/pet-app --exclude-test-account
+```
+
+上面的加密 `.dfbackup` 命令目前用于本机 SQLite，不能当作 Neon 备份恢复工具。公网用户可从网页导出自己的记录；独立自动备份、原生语音及 Redmi 真机验收仍待后续完成，不把数据库持久化当作自动异地备份。
 
 ## 验证
 
@@ -90,4 +112,4 @@ node scripts/check-pet-browser.mjs
 node scripts/check-pet-races.mjs
 ```
 
-脚本目前使用Windows已安装的Chrome路径，可按本机浏览器路径调整。完整验证和外部待办见 `../docs/superpowers/plans/2026-11-13-dafeyu-pwa-validation.md`。公网动作预览为 https://qqbot-public-web-test.onrender.com ，不开放账号或聊天。
+脚本目前使用Windows已安装的Chrome路径，可按本机浏览器路径调整。历史PWA验证见 `../docs/superpowers/plans/2026-11-13-dafeyu-pwa-validation.md`；当前免费公网部署验证见 `../docs/superpowers/plans/2026-11-13-dafeyu-render-free.md`。公网入口为 https://qqbot-public-web-test.onrender.com ，已开放邀请注册和真实聊天。

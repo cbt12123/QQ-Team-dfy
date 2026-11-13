@@ -115,5 +115,25 @@ export class Store {
       this.db.exec('COMMIT');
     } catch (error) { this.db.exec('ROLLBACK'); throw error; }
   }
+  startMessage(user, requestId, text) {
+    this.db.exec('BEGIN IMMEDIATE');
+    try {
+      if (this.db.prepare('SELECT generation FROM users WHERE id=?').get(user.id)?.generation !== user.generation) throw failure(409, '内容已清除，本次回复已取消');
+      this.db.prepare("INSERT INTO requests(user_id,request_id,state,generation,input_hash) VALUES(?,?,'pending',?,?)").run(user.id, requestId, user.generation, digest(text));
+      this.db.prepare('INSERT INTO messages VALUES(?,?,?,?,?,?)').run(randomUUID(), user.id, requestId, 'user', text.trim(), Date.now());
+      this.db.exec('COMMIT');
+    } catch (error) { this.db.exec('ROLLBACK'); throw error; }
+  }
+  completeMessage(user, requestId, message) {
+    this.db.exec('BEGIN IMMEDIATE');
+    try {
+      const current = this.db.prepare('SELECT generation FROM users WHERE id=?').get(user.id);
+      const request = this.db.prepare('SELECT state FROM requests WHERE user_id=? AND request_id=?').get(user.id, requestId);
+      if (current?.generation !== user.generation || request?.state !== 'pending') throw failure(409, '内容已清除，本次回复已取消');
+      this.db.prepare('INSERT INTO messages VALUES(?,?,?,?,?,?)').run(message.id, user.id, requestId, message.role, message.text, message.created);
+      this.db.prepare("UPDATE requests SET state='completed',response_id=? WHERE user_id=? AND request_id=?").run(message.id, user.id, requestId);
+      this.db.exec('COMMIT');
+    } catch (error) { this.db.exec('ROLLBACK'); throw error; }
+  }
   close() { this.db.close(); }
 }

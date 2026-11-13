@@ -38,7 +38,7 @@ test('successful retries reuse a persisted answer, and request IDs cannot be reu
   let count = 0;
   const { request, register } = await fixture(t, { chat: { reply: async () => { count++; return '好呀'; } } });
   const alice = await register('alice');
-  const body = { requestId: 'same-message-001', text: '你好' };
+  const body = { requestId: 'same-message-001', text: ' 你好 ' };
   const first = await request('/api/messages', { cookie: alice.cookie, method: 'POST', body });
   const again = await request('/api/messages', { cookie: alice.cookie, method: 'POST', body });
   assert.equal(first.status, 200);

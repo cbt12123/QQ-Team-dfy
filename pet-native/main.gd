@@ -215,7 +215,7 @@ func _build_settings(page: VBoxContainer) -> void:
     form.add_theme_constant_override("separation", 12)
     form.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     scroll.add_child(form)
-    _label(form, "现有公网地址只提供动作预览，不能注册或聊天。正式服务启用后，在这里填写它的 HTTPS 地址。", 15, "819179")
+    _label(form, "填写服务器的 HTTPS 地址，使用邀请码注册或登录已有账号。", 15, "819179")
     _label(form, "服务器地址", 15)
     server_input = _field(form, "https://你的服务器")
     form.add_child(_button("保存服务器地址", _save_server))
@@ -232,7 +232,7 @@ func _build_settings(page: VBoxContainer) -> void:
     row.add_child(_button("登录", func(): _authenticate(false), true))
     row.add_child(_button("受邀注册", func(): _authenticate(true)))
     form.add_child(_button("退出并清除当前页面", _logout))
-    auth_label = _label(form, "当前公网注册尚未开放，无需注册即可玩动作。接入正式服务器后，登录会话仅在内存保存，退出 App 后需重新登录。", 13, "819179")
+    auth_label = _label(form, "无需登录即可玩动作。注册和聊天取决于所连接的服务；登录会话仅在内存保存，退出 App 后需重新登录。", 13, "819179")
     form.add_child(_button("角色、引擎与字体许可", func(): _show_page("credits")))
 
 func _build_credits(page: VBoxContainer) -> void:
@@ -437,7 +437,7 @@ func _clear_account() -> void:
     chat_input.text = ""
     chat_log.text = "这里还没有故事。"
     account_label.text = "就在这里"
-    network_label.text = "请先在设置中登录。当前默认公网地址仅提供动作预览。"
+    network_label.text = "请先在设置中连接服务器并登录。"
 
 func _logout() -> void:
     api.logout_remotely()
@@ -449,9 +449,6 @@ func _authenticate(registering: bool) -> void:
         return
     if not api.set_base(server_input.text):
         auth_label.text = "服务器地址不正确。"
-        return
-    if api.base_url == ApiSource.PREVIEW_BASE:
-        auth_label.text = "当前是动作体验服务器，注册和登录尚未开放；无需注册即可玩动作。"
         return
     if username_input.text.length() < 3 or password_input.text.length() < 12:
         auth_label.text = "用户名至少3位，密码至少12位。"
@@ -517,7 +514,7 @@ func _send_message() -> void:
     if busy:
         return
     if user.is_empty():
-        network_label.text = "请先到设置登录。现有公网动作预览尚未开放聊天。"
+        network_label.text = "请先到设置连接服务器并登录后聊天。"
         return
     var text := chat_input.text.strip_edges()
     if text.is_empty() or text.length() > 4000:

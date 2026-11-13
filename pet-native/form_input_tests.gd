@@ -1,5 +1,12 @@
 extends SceneTree
 
+class OfflineApi extends "res://api_client.gd":
+    var requests: Array = []
+
+    func request_json(method: int, path: String, body: Dictionary = {}) -> Dictionary:
+        requests.append({"method": method, "path": path, "body": body.duplicate()})
+        return {"ok": false, "error": "离线测试：服务暂不可用", "status": 503}
+
 var room: Control
 
 func _init() -> void:
@@ -32,10 +39,29 @@ func run() -> void:
         Input.parse_input_event(key)
         await process_frame
         assert(field.text == "t", "Focused field must accept keyboard input")
+    var original_api = room.api
+    room.api = OfflineApi.new()
+    room.add_child(room.api)
+    original_api.queue_free()
     room.server_input.text = room.api.PREVIEW_BASE
     await room._authenticate(true)
-    assert("注册和登录尚未开放" in room.auth_label.text)
-    assert(room.api.active == 0, "Preview registration must stop before a network request")
+    assert(room.api.requests.is_empty(), "Invalid credentials must fail before a request")
+    assert("用户名至少3位" in room.auth_label.text)
+    for registering in [true, false]:
+        room.username_input.text = "offline-user"
+        room.password_input.text = "offline-password-123"
+        room.invite_input.text = "offline-invite"
+        await room._authenticate(registering)
+        var request: Dictionary = room.api.requests.back()
+        assert(request.method == HTTPClient.METHOD_POST)
+        assert(request.path == ("/api/register" if registering else "/api/login"))
+        assert(request.body.username == "offline-user")
+        assert(request.body.password == "offline-password-123")
+        if registering:
+            assert(request.body.invite == "offline-invite")
+        assert(room.auth_label.text == "离线测试：服务暂不可用", "Display the actual API error at the default domain")
+    assert(room.api.requests.size() == 2)
+    assert(not room.busy)
     room._show_page("chat")
     await process_frame
     await tap(room.chat_input)
