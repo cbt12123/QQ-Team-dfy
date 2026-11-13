@@ -59,7 +59,7 @@ Files: `pet-native/export_presets.cfg`、`scripts/build-pet-native.sh`、`pet-na
 - [x] 导出arm64 APK给K80 Pro，必要时单独导出x86_64测试包；验证签名、包ID和权限不含悬浮窗。
 - [x] 现有模拟器安装/启动，实际触摸动作、拖动和睡眠唤醒；截图检查是否原生绘制且无播放器控件。
 - [x] 一次独立只读审查新客户端，修复重要问题并回归。
-- [ ] 通过原免费服务提供APK下载及SHA256；下载不开放真实账号或上传数据。
+- [x] 通过原免费服务提供APK下载及SHA256；下载不开放真实账号或上传数据。
 - [x] 明确模拟器/构建验证与K80 Pro真机验收区别，记录语音原生接入及正式云端资源待办。
 
 ## Execution ledger
@@ -71,4 +71,5 @@ Files: `pet-native/export_presets.cfg`、`scripts/build-pet-native.sh`、`pet-na
 - Task 4：独立审查指出高屏拖动越界和多指切页卡住，已修复；另修复首次零尺寸布局偏移并加回归。ARM64与x86_64包导出，v2/v3签名及16KiB ZIP对齐通过。
 - API35独立模拟器：默认SwiftShader有Godot上游已知uniform限制，切换host/NVIDIA后显示正常；六按钮、拖动、sleep_start/loop/end实际触摸日志验证。Windows宿主Godot根证书读取告警不影响localhost契约，Android公网TLS仍待真机验证。
 - ARM64包63,384,073字节，SHA256 a642dd296e71fd4d5231efebd33ed06287861c0e6e65cf2a0cd4341aa3c0a1dd。只包含arm64-v8a，默认公网仍是无账号动作预览。
-- 进行中：免费预览服务下载发布与公网校验；K80 Pro真机验收需用户安装，原生语音、正式云端数据库与备份未上线。
+- 交付：Render dep-dbrds3tg1s2s73876jng 已 live，公网 /downloads/dafeyu-android.apk 的 HEAD 类型/长度、完整63,384,073字节下载及SHA256一致；源码和修改图集已发布 codex/dafeyu-native 分支。
+- K80 Pro真机验收需用户安装，原生语音、正式云端数据库与备份未上线；这些不属于本次动作体验包的已完成能力。
