@@ -79,3 +79,5 @@ Files: `pet-native/export_presets.cfg`、`scripts/build-pet-native.sh`、`pet-na
 
 - 0.1.1补充验证：用户再次反馈设置输入不能用。截图及ADB确认字段能聚焦收键，但IME未显示；即使AVD配置hw.keyboard=no，Android仍报告AT Translated Set 2实体键盘。专用5556模拟器root解除atkbd/serio0绑定后，mInputShown=true。四个字段逐项点击/软键盘检查/填写后，真实HTTP注册201、me200、messages200，界面显示native-ui-test并进入聊天。已回到设置页并弹出键盘交还用户，不再自动操作。临时服务仅用于本机测试、模型为回显；公网尚未开放账号。
 - 0.1.1下载更新：部署仓库提交264d37b，ARM64 SHA256 1931ce62fc8f1ca2a414d8a9d076982534e1ec581b34e85ed67b49bac5076f13；等待Render发布及公网校验。
+
+- 0.1.1发布完成：Render dep-dbrg6kd6e07s73bjrrmg live，公网完整下载63,384,073字节，SHA256与1931ce62fc8f1ca2a414d8a9d076982534e1ec581b34e85ed67b49bac5076f13一致。用户模拟器保持打开，设置页用户名框焦点、IME已显示，当前使用临时本机测试账号/回显服务；不要自动关闭、重启或清空。公网账号功能仍未上线。
