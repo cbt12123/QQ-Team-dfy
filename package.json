@@ -1,7 +1,11 @@
 {
-  "name": "public-web-test",
+  "name": "dafeyu-public-chat",
   "private": true,
   "type": "module",
-  "scripts": { "start": "node server.mjs" },
-  "engines": { "node": ">=22" }
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  }
 }
