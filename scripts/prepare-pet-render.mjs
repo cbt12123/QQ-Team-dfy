@@ -9,7 +9,7 @@ if (!existsSync(join(target, '.git'))) throw new Error('缺少已有 Render 发�
 const require = createRequire(import.meta.url);
 const esbuild = require(join(root, '.cache/pet-render-build/node_modules/esbuild'));
 mkdirSync(join(target, 'pet-app'), { recursive: true });
-for (const name of ['server.mjs', 'store.mjs', 'chat.mjs', 'voice.mjs']) cpSync(join(root, 'pet-app', name), join(target, 'pet-app', name));
+for (const name of ['server.mjs', 'store.mjs', 'chat.mjs', 'voice.mjs', 'spoken-reply.mjs']) cpSync(join(root, 'pet-app', name), join(target, 'pet-app', name));
 cpSync(join(root, 'pet-app/public'), join(target, 'pet-app/public'), { recursive: true });
 cpSync(join(root, 'deploy/pet-render-server.mjs'), join(target, 'server.mjs'));
 // The existing Render build command is syntax-only; ship a pinned, locally bundled pg driver.

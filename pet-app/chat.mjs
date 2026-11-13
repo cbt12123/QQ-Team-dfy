@@ -1,3 +1,23 @@
+import { SpokenReplyDecoder } from './spoken-reply.mjs';
+
+function familiarVoice({ personality, text = '' }) {
+  const custom = personality?.custom || '';
+  if (!/知性/.test(custom) || !/姐姐|年长女性/.test(custom)) return false;
+  const question = text.replace(/没什么(?:正)?事|不知道说什么|(?:做)?什么都/g, '');
+  if (/谁|什么|多少|哪里|哪(?:个|些|种|里|儿)|几(?:点|个|岁|天)|何时|何处|怎么(?:样|算|用|写|实现|解决)|如何|能否|是否|帮我|给我|告诉我|想知道|查一下|查查|推荐|具体建议|解决方案|\b(?:what|where|when|who|how|why|write|translate|calculate|explain)\b/i.test(question)) return false;
+  if (/[?？]/.test(text) && !/陪.{0,5}(聊|说)|想.{0,6}聊|想找你|有人说说话|在吗/.test(text)) return false;
+  if (/代码|编程|函数|算法|数据库|数学|如何实现|写一|^(?:请|帮我)?(?:解释|翻译|计算|推导)/.test(text)) return false;
+  return /烦|睡不着|失眠|泄气|委屈|难过|难受|心累|我.{0,6}累|好累|很累|开心|高兴|搞定|做完|终于|想.*聊|说.*话|没什么(?:正)?事|想找你|说两句|我.{0,12}(?:不行|做不好)|自己.{0,10}(?:不行|做不好)|在吗|想你/.test(text);
+}
+
+function voiceCard(custom) {
+  return custom.replace(/^六、语气样[\s\S]*?(?=^七、|(?![\s\S]))/m, '')
+    .replace(/^- 偶尔一句.*我那阵子.*$/m, '')
+    .replace(/^(?:1\.\s*接住|2\.\s*轻推|3\.\s*留白).*$/gm, '');
+}
+
+const VOICE_FORMAT = '\n角色表达：重点是温柔熟悉的姐姐感，而不是中性的情绪复述。输出JSON对象，仅有按顺序排列的三个字符串：opening（通常留空，只有自然需要才写一句不超过12字的短接话，不总结情绪，不写建议，不解释心理现象，不用“正常/换谁都会/其实/不是…是…”下结论，拿不准就留空）；personal_voice（必须有，以我开头，一句有温度、亲近、体现自己态度的角色台词，只表达自己愿意怎样接住这场交谈，不分析用户内心，不评价第三方，不替用户定义真实想法，不写“我看得出/我听着你是/我觉得你其实/你不是…是…”等心理判断，不用“我理解/我建议/我不知道/我在这里提供帮助”充数，不写任何自己的亲身经历，不虚构共同经历或现实陪伴）；continuation（通常留空，只有自然需要才承接一句，不邀约明天，不机械追问，不给行动指令）。三个字段会直接拼成发给用户的消息，不是语气分析。整体松弛熟悉，尽量不超过100字。不要把“我陪你”当成每轮默认句式，贴着当前内容换一种自然接话。不劝用户联系或停止联系，不评价双方做法。不自称姐姐，不反复叫小朋友。';
+
 export function configuredChat(env = process.env) {
   if (!env.LLM_API_KEY) return undefined;
   const base = (env.LLM_BASE_URL || 'https://api.deepseek.com/v1').replace(/\/+$/, '');
@@ -7,7 +27,7 @@ export function configuredChat(env = process.env) {
   const prompt = personality => {
     const custom = typeof personality?.custom === 'string' ? personality.custom.trim() : '';
     return boundaries + (custom
-      ? '\n当前账号的角色与行为规则：\n' + custom + '\n以上规则适用于角色定位、说话方式、回应节奏和关系边界。禁止项必须执行，不要以建议、反问或委婉表达绕过。在必要约束之外，优先遵循当前规则，而非旧回复的风格。'
+      ? '\n当前账号的角色与行为规则：\n' + custom + '\n角色表达应通过措辞、节奏和有分寸的个人态度体现，不只中性复述情绪。以上规则适用于角色定位、说话方式、回应节奏和关系边界。禁止项必须执行，不要以建议、反问或委婉表达绕过。在必要约束之外，优先遵循当前规则，而非旧回复的风格。'
       : '\n当前账号的默认性格：' + (presets[personality?.preset] || presets.friendly) + '自然简短，不机械追问，不自动认亲。');
   };
   const context = (history, personality) => personality?.custom?.trim() && history.length
@@ -27,12 +47,17 @@ export function configuredChat(env = process.env) {
   const request = async ({ history = [], memories = [], text, signal, personality }, stream) => {
     signal?.throwIfAborted();
     const policy = turnRules(text, personality, history);
+    const voiced = familiarVoice({personality,text});
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.LLM_API_KEY}` },
       body: JSON.stringify({
         model: env.LLM_MODEL || 'deepseek-chat',
-        messages: [
+        ...(voiced ? {response_format:{type:'json_object'}} : {}),
+        messages: voiced ? [
+          {role:'system',content:boundaries+'\n当前账号的角色与行为规则：\n'+voiceCard(personality.custom)+VOICE_FORMAT},
+          {role:'user',content:JSON.stringify({conversation_reference:history.filter(m=>m.role==='user' || /你刚才|你前面|你的意思|上句话|上面|这段代码/.test(text)),long_term_memories:memories,current_message:text})}
+        ] : [
           { role: 'system', content: prompt(personality) + '\n旧助手回复不是你的立场，也不是风格示范；用户质疑旧建议时可直接承认原先建议依据不足。遵循当前账号的长短和互动偏好，不默认套用分析、建议、追问三段模板。不要照抄设定的例句。' + policy },
           ...context(history, personality),
           { role: 'user', content: memories.length ? JSON.stringify({ long_term_memories: memories, current_message: text }) : text },
@@ -49,12 +74,14 @@ export function configuredChat(env = process.env) {
     const payload = await response.json();
     const content = payload?.choices?.[0]?.message?.content;
     if (typeof content !== 'string' || !content.trim()) throw new Error('模型未返回有效文字');
+    if (familiarVoice(options)) { const decoder = new SpokenReplyDecoder(() => {}); decoder.feed(content); return decoder.finish().trim(); }
     return content.trim();
   }, stream: async options => {
     const response = await request(options, true);
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let pending = '', data = [], answer = '', done = false;
+    const spoken = familiarVoice(options) ? new SpokenReplyDecoder(text => { answer += text; options.onDelta(text); }) : null;
     const dispatch = () => {
       if (!data.length) return;
       const value = data.join('\n'); data = [];
@@ -63,9 +90,9 @@ export function configuredChat(env = process.env) {
       if (payload.error) throw new Error('provider stream error');
       const text = payload?.choices?.[0]?.delta?.content;
       if (typeof text === 'string' && text) {
-        answer += text;
+        if (spoken) spoken.feed(text);
+        else { answer += text; options.onDelta(text); }
         if (answer.length > 8000) throw new Error('provider answer too long');
-        options.onDelta(text);
       }
     };
     const line = value => {
@@ -84,6 +111,7 @@ export function configuredChat(env = process.env) {
         }
         if (part.done) { if (pending) line(pending.replace(/\r$/, '')); dispatch(); break; }
       }
+      if (spoken) spoken.finish();
       if (!done || !answer.trim()) throw new Error('incomplete provider stream');
       return answer.trim();
     } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
