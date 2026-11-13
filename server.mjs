@@ -1,6 +1,6 @@
 // Public animation preview only: no accounts, database, model calls or audio uploads.
 import http from 'node:http';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, statSync, createReadStream } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -22,6 +22,22 @@ http.createServer((req, res) => {
   if (path === '/health') { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end('{"status":"ok","mode":"animation-preview"}'); }
   if (path.startsWith('/api/')) { res.writeHead(path === '/api/me' ? 401 : 503, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); return res.end(JSON.stringify({ error: '这里只提供动作预览，暂不开放账号和聊天' })); }
   if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405); return res.end(); }
+  // Explicit download allowlist; never serve arbitrary repository files.
+  if (['/downloads/dafeyu-android.apk', '/downloads/dafeyu-android.sha256'].includes(path)) {
+    const file = join(root, path.slice(1));
+    if (!existsSync(file)) { res.writeHead(404); return res.end('Not found'); }
+    res.writeHead(200, {
+      'Content-Type': path.endsWith('.apk') ? 'application/vnd.android.package-archive' : 'text/plain; charset=utf-8',
+      'Content-Length': statSync(file).size,
+      'Content-Disposition': `attachment; filename="${path.split('/').at(-1)}"`,
+      'Cache-Control': 'no-cache',
+    });
+    if (req.method === 'HEAD') return res.end();
+    const stream = createReadStream(file);
+    stream.on('error', () => res.destroy());
+    res.on('close', () => stream.destroy());
+    return stream.pipe(res);
+  }
   const relative = path === '/' ? 'index.html' : path.slice(1);
   if (!/^(?:index\.html|app\.js|actions\.js|styles\.css|sw\.js|manifest\.webmanifest|icon\.svg|licenses\.html|licenses\/[a-zA-Z0-9_.-]+\.txt|assets\/[a-zA-Z0-9_.-]+\.(?:json|webm))$/.test(relative) || !existsSync(join(root, relative))) { res.writeHead(404); return res.end('Not found'); }
   const content = relative === 'index.html' ? preview(readFileSync(join(root, relative), 'utf8')) : readFileSync(join(root, relative));
