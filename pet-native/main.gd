@@ -335,13 +335,13 @@ func _build_settings(page: VBoxContainer) -> void:
 
 func _build_personality(page: VBoxContainer) -> void:
     _label(page, "大肥鱼的性格", 27)
-    _label(page, "只影响当前账号的聊天风格。", 15)
+    _label(page, "只对当前账号生效。填写自定义性格后，将优先使用它作为角色规则；留空时使用所选预设。", 15)
     personality_choice = OptionButton.new()
     for title in ["亲切友好", "活泼俏皮", "平静温柔"]:
         personality_choice.add_item(title)
     page.add_child(personality_choice)
     personality_custom = TextEdit.new()
-    personality_custom.placeholder_text = "写下你希望的聊天风格（最多1000字）"
+    personality_custom.placeholder_text = "角色、说话方式和互动规则（最多1000字）"
     personality_custom.custom_minimum_size.y = 180
     personality_custom.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
     page.add_child(personality_custom)

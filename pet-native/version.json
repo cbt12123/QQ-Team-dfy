@@ -1,6 +1,6 @@
 {
-  "version_code": 7,
-  "version_name": "0.3.0",
+  "version_code": 8,
+  "version_name": "0.3.1",
   "package_name": "com.dafeyu.pet",
-  "release_notes": "动作音效与九项互动；精简账号设置和独立性格；即时消息、真实流式回复和气泡聊天。"
+  "release_notes": "修正自定义性格优先级：作为当前账号的角色与行为规则，覆盖默认人设；保留原有对话和记忆。"
 }
