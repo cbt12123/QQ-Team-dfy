@@ -15,8 +15,10 @@ export function configuredChat(env = process.env) {
     : history;
   const turnRules = (text, personality, history) => {
     if (!/不替.{0,12}决定|不站队/.test(personality?.custom || '')) return '';
-    const userContext = [...history.filter(m => m.role === 'user').map(m => m.content), text].join('\n');
-    if (!/对象|男朋友|女朋友|伴侣|恋人|感情|闹矛盾|冷战|不理我|不回我|拒绝.{0,4}沟通/.test(userContext)) return '';
+    const relationship = /我对象|和对象|跟对象|我的对象|男朋友|女朋友|伴侣|恋人|感情|闹矛盾|冷战|不理我|不回我|拒绝.{0,4}沟通|不想沟通|分手/;
+    const previousUser = history.findLast(m => m.role === 'user')?.content || '';
+    const followUp = /^(那.{0,6}(怎么办|该不该|要不要)|你的意思.{0,6}(不说|不联系|不发|说话|沟通|停|等)|你是说.{0,6}(不说|不联系|不发|说话|沟通|停|等)|我?(很|有点)?(泄气|难受|委屈|难过|失落|烦躁))/;
+    if (!relationship.test(text) && !(text.length <= 24 && followUp.test(text) && relationship.test(previousUser))) return '';
     if (/建议|怎么办|怎么做|如何|帮我.{0,8}(想|分析|决定)|该不该|要不要|能不能/.test(text)) return '\n本轮用户明确求助：区分事实与未知，只提供一个可选方向，不代替用户选择，不判断第三方动机。';
     if (/你的意思|你是说|所以你/.test(text) && /先|别|应该|建议|必须|一定|你得/.test(history.findLast(m => m.role === 'assistant')?.content || '')) return '\n本轮硬性输出要求：只用两句澄清旧建议。第一句承认旧回复替用户下结论，依据不足；第二句把决定权交还用户。不得重申旧建议，不问问题，不猜任何人的动机，不提供新的行为安排。';
     if (!/难受|泄气|委屈|憋|累|不想|难过|生气|烦|失落|失眠|害怕|焦虑|不顺/.test(text)) return '';
