@@ -73,3 +73,9 @@ Files: `pet-native/export_presets.cfg`、`scripts/build-pet-native.sh`、`pet-na
 - ARM64包63,384,073字节，SHA256 a642dd296e71fd4d5231efebd33ed06287861c0e6e65cf2a0cd4341aa3c0a1dd。只包含arm64-v8a，默认公网仍是无账号动作预览。
 - 交付：Render dep-dbrds3tg1s2s73876jng 已 live，公网 /downloads/dafeyu-android.apk 的 HEAD 类型/长度、完整63,384,073字节下载及SHA256一致；源码和修改图集已发布 codex/dafeyu-native 分支。
 - K80 Pro真机验收需用户安装，原生语音、正式云端数据库与备份未上线；这些不属于本次动作体验包的已完成能力。
+
+- 0.1.1修复进行中：用户报告注册输入框无法点击。真实触摸注入测试先失败，恢复 emulate_mouse_from_touch 后通过；房间忽略模拟鼠标防止重复触摸，调深placeholder，预览地址注册立即明确提示。新增表单测试覆盖4个字段和聊天、键盘字符及预览阻止请求。状态/交互/本机HTTP契约均通过，ARM64与x86_64 0.1.1/code2构建签名通过；新ARM64 SHA256 1931ce62fc8f1ca2a414d8a9d076982534e1ec581b34e85ed67b49bac5076f13，尚未替换公网下载。
+- 用户要求打开模拟器手动试用：独立 Dafeyu_API35:5556 已以可见窗口启动并运行修复版，关闭AVD硬件键盘（Godot遇硬件键盘会跳过软键盘）。已交还操作，等待用户测试；不要自动点击、重启或关闭该模拟器。完整模拟器注册与公网发布待继续。
+
+- 0.1.1补充验证：用户再次反馈设置输入不能用。截图及ADB确认字段能聚焦收键，但IME未显示；即使AVD配置hw.keyboard=no，Android仍报告AT Translated Set 2实体键盘。专用5556模拟器root解除atkbd/serio0绑定后，mInputShown=true。四个字段逐项点击/软键盘检查/填写后，真实HTTP注册201、me200、messages200，界面显示native-ui-test并进入聊天。已回到设置页并弹出键盘交还用户，不再自动操作。临时服务仅用于本机测试、模型为回显；公网尚未开放账号。
+- 0.1.1下载更新：部署仓库提交264d37b，ARM64 SHA256 1931ce62fc8f1ca2a414d8a9d076982534e1ec581b34e85ed67b49bac5076f13；等待Render发布及公网校验。

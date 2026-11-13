@@ -30,6 +30,7 @@ EOF
 "$PET_GODOT" --headless --path "$PET_ROOT/pet-native" --editor --import > "$PET_ROOT/.cache/pet-native-linux-import.log" 2>&1
 "$PET_GODOT" --headless --path "$PET_ROOT/pet-native" --script res://tests.gd
 "$PET_GODOT" --headless --path "$PET_ROOT/pet-native" --script res://interaction_tests.gd
+"$PET_GODOT" --headless --path "$PET_ROOT/pet-native" --script res://form_input_tests.gd
 "$PET_GODOT" --headless --path "$PET_ROOT/pet-native" --export-debug 'Android ARM64' "$PET_ROOT/artifacts/dafeyu-native-arm64-debug.apk" > "$PET_ROOT/.cache/pet-native-arm64-export.log" 2>&1
 "$PET_GODOT" --headless --path "$PET_ROOT/pet-native" --export-debug 'Android Emulator' "$PET_ROOT/artifacts/dafeyu-native-x86_64-debug.apk" > "$PET_ROOT/.cache/pet-native-emulator-export.log" 2>&1
 "$PET_SDK/build-tools/35.0.0/apksigner" verify --verbose "$PET_ROOT/artifacts/dafeyu-native-arm64-debug.apk"

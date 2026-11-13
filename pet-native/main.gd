@@ -94,6 +94,7 @@ func _field(parent: Node, placeholder: String, secret: bool = false) -> LineEdit
     input.add_theme_stylebox_override("normal", _box("ffffff", 12))
     input.add_theme_stylebox_override("focus", _box("ffffff", 12))
     input.add_theme_color_override("font_color", Color("355345"))
+    input.add_theme_color_override("font_placeholder_color", Color("758575"))
     parent.add_child(input)
     return input
 
@@ -226,7 +227,7 @@ func _build_settings(page: VBoxContainer) -> void:
     row.add_child(_button("登录", func(): _authenticate(false), true))
     row.add_child(_button("受邀注册", func(): _authenticate(true)))
     form.add_child(_button("退出并清除当前页面", _logout))
-    auth_label = _label(form, "首版只在内存中保存登录会话，不把密码或会话写入磁盘；退出 App 后需重新登录。", 13, "819179")
+    auth_label = _label(form, "当前公网注册尚未开放，无需注册即可玩动作。接入正式服务器后，登录会话仅在内存保存，退出 App 后需重新登录。", 13, "819179")
     form.add_child(_button("角色、引擎与字体许可", func(): _show_page("credits")))
 
 func _build_credits(page: VBoxContainer) -> void:
@@ -344,6 +345,9 @@ func _toggle_sleep() -> void:
 func _input(event: InputEvent) -> void:
     if current_page != "room" or stage == null:
         return
+    # The room handles raw touch; synthetic mouse events are for native form controls.
+    if (event is InputEventMouseButton or event is InputEventMouseMotion) and event.device == InputEvent.DEVICE_ID_EMULATION:
+        return
     var point := Vector2.ZERO
     var pressed := false
     var released := false
@@ -428,6 +432,9 @@ func _authenticate(registering: bool) -> void:
         return
     if not api.set_base(server_input.text):
         auth_label.text = "服务器地址不正确。"
+        return
+    if api.base_url == ApiSource.PREVIEW_BASE:
+        auth_label.text = "当前是动作体验服务器，注册和登录尚未开放；无需注册即可玩动作。"
         return
     if username_input.text.length() < 3 or password_input.text.length() < 12:
         auth_label.text = "用户名至少3位，密码至少12位。"

@@ -33,6 +33,13 @@ func run() -> void:
     room._input(cancel)
     assert(not room.state.held and room.finger == -99)
     assert(room.state.action == "idle", "Canceled touch must not trigger petting")
+    var synthetic := InputEventMouseButton.new()
+    synthetic.device = InputEvent.DEVICE_ID_EMULATION
+    synthetic.button_index = MOUSE_BUTTON_LEFT
+    synthetic.pressed = true
+    synthetic.position = room.stage.global_position + room.player.position - Vector2(0, 100)
+    room._input(synthetic)
+    assert(not room.state.held, "Synthetic mouse must not duplicate a pet touch")
     room.queue_free()
     await process_frame
     print("PASS: native page switching, tall-screen bounds and canceled touches")

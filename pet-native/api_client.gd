@@ -1,6 +1,7 @@
 extends Node
 
-var base_url: String = "https://qqbot-public-web-test.onrender.com"
+const PREVIEW_BASE = "https://qqbot-public-web-test.onrender.com"
+var base_url: String = PREVIEW_BASE
 var cookie: String = ""
 var generation: int = 0
 var active: int = 0

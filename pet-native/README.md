@@ -4,6 +4,8 @@
 
 提供摸摸、开饭、挥手、伸懒腰、吐泡泡、拖动、睡眠与唤醒，共10段动画。首次动作切换需加载纹理；仅缓存待机及当前动作。离开房间暂停动画，退出 App 不在后台显示角色。
 
+0.1.1 修复触摸无法聚焦表单的问题，保留控件的触摸转鼠标事件，房间单独忽略重复的模拟鼠标事件；调深输入提示文字，预览服务器注册会明确提示尚未开放。
+
 ## 安装与连接
 
 给 Redmi K80 Pro 使用 `artifacts/dafeyu-native-arm64-debug.apk`。这是调试签名预览包，Android 需要允许下载所用浏览器安装未知应用。升级需使用同一调试签名；签名保存在本机忽略目录 `.cache/pet-godot/debug.keystore`，不要提交。
@@ -29,6 +31,10 @@ wsl bash /mnt/g/dsh_workspace/qqbot/scripts/build-pet-native.sh
 构建脚本运行状态和真实场景交互回归，导出独立 ARM64、x86_64 包，并检查签名、16KiB ZIP 对齐、SHA256。不同工作区须修改调用路径，可用 `PET_ANDROID_SDK`、`PET_JAVA_HOME` 指定已有工具链。
 
 `api_contract_tests.gd` 使用临时 pet-app 测试实例，覆盖注册、Cookie、聊天及切换身份后的迟到响应；测试脚本不打入 APK。测试配置在项目目录外 `.cache/pet-native-api-fixture.json`，不得使用真实账号。
+
+`form_input_tests.gd` 向真实场景注入触摸和键盘事件，验证四个设置字段与聊天框。API35 模拟器另实际验证软键盘、逐项填写、注册201、账号和历史查询200。临时测试后端的聊天只是回显，不能作为真实模型聊天验证。
+
+本机专用模拟器 `Dafeyu_API35` 即使设置 `hw.keyboard=no`，仍可能暴露 `AT Translated Set 2 keyboard`，Godot 会主动抑制软键盘。2026-11-13 在确认该模拟器的 `/sys/bus/serio/drivers/atkbd/serio0` 后，通过 adb root 及解除该驱动绑定验证键盘弹出；只影响该测试模拟器，重启会恢复。勿将这一步用于手机或其他模拟器。仅检查 AVD 配置不足以证明软键盘可用。
 
 ## 素材与许可
 
