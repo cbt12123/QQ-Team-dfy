@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>公网访问测试</title>
+<style>
+  body { margin: 0; padding: 24px; min-height: 90vh; display: grid; place-items: center; background: #f0f5fa; color: #183047; font: 18px/1.7 system-ui, sans-serif; }
+  main { width: min(100%, 560px); padding: 28px; box-sizing: border-box; border-radius: 16px; background: white; }
+  h1 { font-size: 28px; }
+  a { color: #146b49; }
+  #status { color: #146b49; }
+</style>
+<main>
+  <h1>欢迎访问测试网页</h1>
+  <p>如果你能看到这段文字，说明设备已经能够访问这个网页服务。</p>
+  <p id="status" role="status">正在检查服务器连接…</p>
+  <p><a href="/health">查看服务器状态接口</a></p>
+  <p>当前仅用于网页连通性测试，尚未部署 QQ 机器人。</p>
+</main>
+<script>
+  fetch('/health', { cache: 'no-store' })
+    .then(response => { if (!response.ok) throw new Error('HTTP ' + response.status); return response.json(); })
+    .then(data => {
+      document.getElementById('status').textContent = '服务器连接成功 · ' + new Date(data.time).toLocaleString();
+    })
+    .catch(() => { document.getElementById('status').textContent = '状态检查失败，请刷新后重试。'; });
+</script>
+</html>
