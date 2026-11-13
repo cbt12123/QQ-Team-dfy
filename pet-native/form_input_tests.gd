@@ -40,6 +40,11 @@ func run() -> void:
     await process_frame
     await tap(room.chat_input)
     assert(room.chat_input.has_focus(), "Touch must focus chat entry")
+    room._apply_keyboard_inset(430)
+    await process_frame
+    await process_frame
+    assert(room.chat_input.get_global_rect().end.y < 1200 - 430, "Chat entry must stay above the soft keyboard")
+    room._apply_keyboard_inset(0)
     room.queue_free()
     await process_frame
     print("PASS: touch focuses all account fields and chat; typed input reaches fields")

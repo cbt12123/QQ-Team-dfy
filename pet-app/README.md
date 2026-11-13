@@ -17,6 +17,12 @@ node --env-file-if-exists=pet-app/.env pet-app/server.mjs
 
 默认仅监听本机 `127.0.0.1:8899`，不启动 QQ，不读取原机器人 `.env` 或聊天数据。开发数据保存在已忽略的 `.cache/pet-app-data/`。没有模型配置时页面明确提示，只能体验动作和个人记忆管理，不伪造正常 AI 对话。
 
+2026-11-13 本机真实聊天已接入已配置的 DeepSeek。模拟器继续使用原端口和账号，会话随 SQLite 一致性快照迁入 `data/pet-app/`；切换前快照在 `data/pet-app-before-real-chat/`。这两个目录均不提交 Git。原测试回显的助手消息已移除，用户消息保留。实际端口及数据目录由忽略的 `pet-app/.env` 指定。
+
+隐藏后台启动：`node scripts/start-pet-chat.mjs`。日志在 `.cache/pet-chat-server*.log`，PID 在 `.cache/pet-chat-server.pid`；未配置 Windows 开机自启。服务重启保留账号、会话、历史和显式记忆，Android App 退出进程后仍需重新登录。公网版仍只有动作预览，电脑关机后当前模拟器聊天服务不可用。
+
+App 聊天使用独立模型适配器，不混入 QQ 群聊/点歌提示；模型不可用时返回错误，不降级成测试回显。模型密钥仅在后端 `.env`。
+
 生产部署 `PET_HOST=0.0.0.0`；必须配置 HTTPS `PET_PUBLIC_URL`、持久化 `PET_DATA_DIR`。Secure Cookie 由公网地址决定。部署后家庭电脑关机不影响服务。
 
 ## 记忆与隔离
@@ -64,7 +70,7 @@ node --env-file=pet-app/.env pet-app/cli.mjs restore --confirm-offline
 
 ## 云端部署材料
 
-`pet-app/Dockerfile` 用仓库根目录为构建上下文，只复制此应用和复用的模型客户端，不复制 `.env`、QQ数据或本地备份。`pet-app/render.yaml` 是带付费实例和持久磁盘的草案，未经预算确认不得应用。现有免费测试服务保持原样；不将真实私人数据存放在免费实例临时文件系统。
+`pet-app/Dockerfile` 用仓库根目录为构建上下文，只复制此应用，不复制 `.env`、QQ数据或本地备份。`pet-app/render.yaml` 是带付费实例和持久磁盘的草案，未经预算确认不得应用。现有免费测试服务保持原样；不将真实私人数据存放在免费实例临时文件系统。
 
 正式上线前尚需：确认付费套餐和预算、设置模型/语音密钥、配置独立备份及每日调度、检查删除日志镜像、验证 iPhone/Android 真机和容量。不能只因开发测试通过就宣称这些外部条件已完成。
 

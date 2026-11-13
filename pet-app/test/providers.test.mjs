@@ -21,6 +21,7 @@ test('configured model and voice adapters exchange real HTTP payloads with compa
   const model = JSON.parse(requests[0].body);
   assert.match(model.messages[0].content, /独立应用/);
   assert.match(model.messages.at(-1).content, /当前用户喜欢蓝莓/);
+  assert.doesNotMatch(model.messages.at(-1).content, /QQ群聊|QQ私聊|QQ 语音|点歌流程/);
   assert.equal(requests[0].path, '/v1/chat/completions');
   const { asr, tts } = configuredVoice({ PET_ASR_BASE_URL: base, PET_ASR_API_KEY: 'asr-test-only', PET_TTS_BASE_URL: base, PET_TTS_API_KEY: 'tts-test-only' });
   assert.equal(await asr.transcribe(Buffer.from('recording-bytes'), 'audio/mpeg'), '识别成功');
@@ -30,4 +31,24 @@ test('configured model and voice adapters exchange real HTTP payloads with compa
   assert.equal(JSON.parse(requests[2].body).input, '你好');
   assert.equal(configuredChat({}), undefined);
   assert.equal(configuredVoice({}).asr, undefined);
+});
+
+test('canceling an app reply aborts the actual provider HTTP request', async t => {
+  let received;
+  const started = new Promise(resolve => { received = resolve; });
+  const server = createServer((req, res) => {
+    req.resume();
+    received();
+    req.on('end', () => setTimeout(() => {
+      if (!res.destroyed) res.end(JSON.stringify({ choices: [{ message: { content: 'too late' } }] }));
+    }, 250));
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => { server.closeAllConnections(); return new Promise(resolve => server.close(resolve)); });
+  const chat = configuredChat({ LLM_BASE_URL: `http://127.0.0.1:${server.address().port}/v1`, LLM_API_KEY: 'test-only' });
+  const controller = new AbortController();
+  const reply = chat.reply({ history: [], memories: [], text: 'hello', signal: controller.signal });
+  await started;
+  controller.abort();
+  await assert.rejects(reply, /abort|cancel/i);
 });

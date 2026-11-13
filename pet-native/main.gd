@@ -30,6 +30,8 @@ var password_input: LineEdit
 var invite_input: LineEdit
 var auth_label: Label
 var busy := false
+var content_margin: MarginContainer
+var keyboard_inset := 0
 
 func _ready() -> void:
     add_child(api)
@@ -100,6 +102,7 @@ func _field(parent: Node, placeholder: String, secret: bool = false) -> LineEdit
 
 func _build_ui() -> void:
     var margin := MarginContainer.new()
+    content_margin = margin
     margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     for side in ["left", "right", "top", "bottom"]:
         margin.add_theme_constant_override("margin_" + side, 22 if side != "top" else 36)
@@ -193,6 +196,8 @@ func _build_chat(page: VBoxContainer) -> void:
     chat_input.custom_minimum_size.y = 100
     chat_input.placeholder_text = "今天发生了什么？"
     chat_input.add_theme_color_override("font_color", Color("355345"))
+    chat_input.add_theme_color_override("font_placeholder_color", Color("758575"))
+    chat_input.add_theme_color_override("caret_color", Color("355345"))
     chat_input.add_theme_stylebox_override("normal", _box("ffffff"))
     chat_input.add_theme_stylebox_override("focus", _box("ffffff"))
     page.add_child(chat_input)
@@ -252,6 +257,18 @@ func _show_page(key: String) -> void:
             player.play()
         else:
             player.pause()
+
+func _process(_delta: float) -> void:
+    if content_margin == null or not DisplayServer.has_feature(DisplayServer.FEATURE_VIRTUAL_KEYBOARD):
+        return
+    var screen_scale: float = maxf(0.01, get_viewport().get_screen_transform().get_scale().y)
+    _apply_keyboard_inset(int(ceilf(DisplayServer.virtual_keyboard_get_height() / screen_scale)))
+
+func _apply_keyboard_inset(height: int) -> void:
+    if height == keyboard_inset:
+        return
+    keyboard_inset = maxi(0, height)
+    content_margin.add_theme_constant_override("margin_bottom", 22 + keyboard_inset)
 
 func _frames_for(key: String) -> SpriteFrames:
     if frame_cache.has(key):
