@@ -90,6 +90,8 @@ export function createApp({ dataDir, store: providedStore, secureCookies = true,
         const user = await store.authenticate(value);
         if (!user) throw failure(401, '请先登录');
         if (path === '/api/me' && req.method === 'GET') return json(res, 200, { user: publicUser(user), capabilities: { chat: Boolean(chat), asr: Boolean(asr), tts: Boolean(tts) } });
+        if (path === '/api/personality' && req.method === 'GET') return json(res, 200, await store.personality(user.id));
+        if (path === '/api/personality' && req.method === 'PUT') return json(res, 200, await store.setPersonality(user.id, await readBody(req)));
         if (path === '/api/logout' && req.method === 'POST') {
           await store.logout(value); sessionCookie(res, '', true); return json(res, 200, { ok: true });
         }
@@ -152,36 +154,49 @@ export function createApp({ dataDir, store: providedStore, secureCookies = true,
           } catch (err) { throw err.status ? err : failure(502, '语音服务暂不可用，可以继续使用文字'); }
           finally { voiceActive.delete(user.id); }
         }
-        if (path === '/api/messages' && req.method === 'POST') {
+        if (['/api/messages', '/api/messages/stream'].includes(path) && req.method === 'POST') {
+          const streaming = path.endsWith('/stream');
+          const event = (name, data) => { if (!res.destroyed) res.write(`event: ${name}\ndata: ${JSON.stringify(data)}\n\n`); };
+          const beginStream = () => { res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no' }); res.flushHeaders(); };
+          const finish = message => { if (!streaming) return json(res, 200, { message }); if (!res.headersSent) beginStream(); event('done', { message }); res.end(); };
           const { requestId, text } = await readBody(req);
           if (typeof requestId !== 'string' || !/^[a-zA-Z0-9_-]{8,100}$/.test(requestId) || typeof text !== 'string' || !text.trim() || text.length > 4000) throw failure(400, '消息需1～4000字，并包含有效请求标识');
           const prior = await store.db.prepare('SELECT * FROM requests WHERE user_id=? AND request_id=?').get(user.id, requestId);
           if (prior) {
             if (prior.input_hash !== digest(text)) throw failure(409, '请求标识已用于另一条消息');
             const message = prior.state === 'completed' && await store.db.prepare('SELECT id,role,text,created FROM messages WHERE id=? AND user_id=?').get(prior.response_id, user.id);
-            if (message) return json(res, 200, { message });
+            if (message) return finish(message);
             throw failure(409, prior.error || '此消息仍在处理，请刷新查看状态');
           }
-          if (!chat) throw failure(503, '尚未配置云端对话模型，请联系管理员');
+          if (!chat || (streaming && !chat.stream)) throw failure(503, '尚未配置云端对话模型，请联系管理员');
           if (active.has(user.id)) throw failure(409, '上一条消息还在回复，请稍等');
           if (active.size >= 5) throw failure(429, '大肥鱼正在忙，请稍后再试');
           rate(`chat:${user.id}`, 20, 60000);
           const controller = new AbortController(); active.set(user.id, controller);
+          const disconnected = () => { if (!res.writableEnded) controller.abort(new Error('client disconnected')); };
+          if (streaming) res.on('close', disconnected);
           try {
             const history = (await store.history(user.id)).slice(-40).map(m => ({ role: m.role, content: m.text }));
             const memories = (await store.memories(user.id)).map(m => m.text);
             await store.startMessage(user, requestId, text);
-            const answer = await chat.reply({ history, memories, text: text.trim(), signal: controller.signal });
+            const personality = await store.personality(user.id);
+            if (streaming) beginStream();
+            const options = { history, memories, personality, text: text.trim(), signal: controller.signal };
+            const answer = streaming
+              ? await chat.stream({ ...options, onDelta: chunk => { controller.signal.throwIfAborted(); event('delta', { text: chunk }); } })
+              : await chat.reply(options);
             const current = await store.db.prepare('SELECT generation FROM users WHERE id=?').get(user.id);
             if (controller.signal.aborted || current?.generation !== user.generation) throw failure(409, '内容已清除，本次回复已取消');
             if (typeof answer !== 'string' || !answer.trim()) throw new Error('empty provider answer');
             const message = { id: randomUUID(), role: 'assistant', text: answer.trim().slice(0, 8000), created: Date.now() };
             await store.completeMessage(user, requestId, message);
-            return json(res, 200, { message });
+            return finish(message);
           } catch (error) {
-            if (!controller.signal.aborted) await store.db.prepare("UPDATE requests SET state='failed',error='回复失败，请使用新的消息重新发送' WHERE user_id=? AND request_id=? AND state='pending'").run(user.id, requestId);
-            throw error.status ? error : failure(502, '对话服务暂不可用，请稍后重新发送');
-          } finally { active.delete(user.id); }
+            await store.db.prepare("UPDATE requests SET state='failed',error='回复失败，请使用新的消息重新发送' WHERE user_id=? AND request_id=? AND state='pending'").run(user.id, requestId);
+            const safe = error.status ? error : failure(502, '对话服务暂不可用，请稍后重新发送');
+            if (streaming && res.headersSent) { event('error', { error: safe.message }); res.end(); return; }
+            throw safe;
+          } finally { res.off('close', disconnected); active.delete(user.id); }
         }
         throw failure(404, '未找到此接口');
       }

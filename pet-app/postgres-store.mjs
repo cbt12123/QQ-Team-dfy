@@ -5380,7 +5380,8 @@ function failure(status, message) {
 var derive2 = promisify2(scrypt2);
 var schemaSql = `
 CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY,username TEXT UNIQUE NOT NULL,display_name TEXT NOT NULL,password_hash TEXT NOT NULL,admin INTEGER NOT NULL DEFAULT 0,generation INTEGER NOT NULL DEFAULT 0);
-CREATE TABLE IF NOT EXISTS sessions(hash TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,expires BIGINT NOT NULL);
+CREATE TABLE IF NOT EXISTS personalities(user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,preset TEXT NOT NULL,custom TEXT NOT NULL);
+      CREATE TABLE IF NOT EXISTS sessions(hash TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,expires BIGINT NOT NULL);
 CREATE TABLE IF NOT EXISTS invites(hash TEXT PRIMARY KEY,admin INTEGER NOT NULL,expires BIGINT NOT NULL);
 CREATE TABLE IF NOT EXISTS messages(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,request_id TEXT NOT NULL,role TEXT NOT NULL,text TEXT NOT NULL,created BIGINT NOT NULL,rowid BIGSERIAL UNIQUE);
 CREATE INDEX IF NOT EXISTS messages_owner ON messages(user_id,rowid);
@@ -5391,7 +5392,7 @@ CREATE TABLE IF NOT EXISTS audio(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFER
 CREATE TABLE IF NOT EXISTS applied_deletions(id TEXT PRIMARY KEY);
 CREATE TABLE IF NOT EXISTS deletion_log(id TEXT PRIMARY KEY,user_id TEXT NOT NULL,kind TEXT NOT NULL,memory_id TEXT,created BIGINT NOT NULL);`;
 function qualify(sql, schema) {
-  return sql.replace(/\b(FROM|JOIN|INTO|UPDATE|REFERENCES|TABLE IF NOT EXISTS|ALTER TABLE|ON)\s+(users|sessions|invites|messages|memories|requests|audio|applied_deletions|deletion_log|migration_meta)\b/gi, `$1 "${schema}".$2`);
+  return sql.replace(/\b(FROM|JOIN|INTO|UPDATE|REFERENCES|TABLE IF NOT EXISTS|ALTER TABLE|ON)\s+(users|personalities|sessions|invites|messages|memories|requests|audio|applied_deletions|deletion_log|migration_meta)\b/gi, `$1 "${schema}".$2`);
 }
 function sqlDatabase(client, schema = "public") {
   return { prepare(sql) {
@@ -5521,6 +5522,14 @@ var PostgresStore = class _PostgresStore {
   }
   async exportHistory(userId) {
     return this.db.prepare("SELECT id,role,text,created FROM messages WHERE user_id=? ORDER BY rowid").all(userId);
+  }
+  async personality(userId) {
+    return await this.db.prepare("SELECT preset,custom FROM personalities WHERE user_id=?").get(userId) || { preset: "friendly", custom: "" };
+  }
+  async setPersonality(userId, { preset, custom }) {
+    if (!["friendly", "playful", "calm"].includes(preset) || typeof custom !== "string" || custom.length > 1e3) throw failure(400, "\u8BF7\u9009\u62E9\u6709\u6548\u6027\u683C\uFF0C\u81EA\u5B9A\u4E49\u8BF4\u660E\u6700\u591A1000\u5B57");
+    await this.db.prepare("INSERT INTO personalities(user_id,preset,custom) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET preset=excluded.preset,custom=excluded.custom").run(userId, preset, custom);
+    return { preset, custom };
   }
   async memories(userId) {
     return this.db.prepare("SELECT id,text,created FROM memories WHERE user_id=? ORDER BY created,rowid").all(userId);

@@ -1,18 +1,18 @@
 {
-  "version_code": 6,
-  "version_name": "0.2.1",
+  "version_code": 7,
+  "version_name": "0.3.0",
   "package_name": "com.dafeyu.pet",
-  "release_notes": "无需邀请码直接注册；新增App内检查更新、下载校验与系统安装入口。",
+  "release_notes": "动作音效与九项互动；精简账号设置和独立性格；即时消息、真实流式回复和气泡聊天。",
   "artifacts": {
     "arm64": {
       "url": "https://qqbot-public-web-test.onrender.com/downloads/dafeyu-android.apk",
-      "sha256": "e1d63487484f6b411b4c0891448004251d113bc48a1b9813c9f26a70682778db",
-      "size": 63392471
+      "sha256": "6e8ac394d5d83ba25e01136b2fe341bbe354305709f596c55c0d2e082b09504e",
+      "size": 63400800
     },
     "x86_64": {
       "url": "https://qqbot-public-web-test.onrender.com/downloads/dafeyu-android-x86_64.apk",
-      "sha256": "c395cbac02a651e7f23ff49d42cf11fe7147437dda2cfdd0bbdb3a9cec7ee42f",
-      "size": 66173649
+      "sha256": "f206b691d963597595d15a3b75b5a976f3efb5d428b2ac69c20e30424d007e9f",
+      "size": 66181978
     }
   }
 }
